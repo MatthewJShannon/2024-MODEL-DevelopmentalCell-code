@@ -1,0 +1,1756 @@
+---
+title:  "PERI-IMPLANTATION EMBRYO DATA PREPARATION"
+author: "Matthew J Shannon"
+date:   "18/01/2024"
+output: html_document
+---
+
+```{r, include = FALSE}
+devtools::install_github  ('chris-mcginnis-ucsf/DoubletFinder')
+devtools::install_github  ('satijalab/seurat-wrappers')
+remotes::install_github   ("mojaveazure/seurat-disk")
+devtools::install_github  ("velocyto-team/velocyto.R")
+BiocManager::install      ("pcaMethods")
+BiocManager::install      ('MAST')
+BiocManager::install      ('org.Hs.eg.db')
+BiocManager::install      (version = "3.12")
+BiocManager::install      ('Seurat')
+BiocManager::install      ('readxl')
+BiocManager::install      ('modes')
+BiocManager::install      ('pheatmap')
+BiocManager::install      ('limma')
+BiocManager::install      ('clustree')
+BiocManager::install      ('clusterProfiler')
+BiocManager::install      ('EnhancedVolcano')
+install.packages          ('fields')
+install.packages          ('plotly')
+install.packages          ("VennDiagram")
+library                   (Seurat)
+library                   (readr)
+library                   (tidyverse)
+library                   (Matrix)
+library                   (dplyr)
+library                   (ggplot2)
+library                   (cowplot)
+library                   (tibble)
+library                   (readxl)
+library                   (sctransform)
+library                   (fields)
+library                   (KernSmooth)
+library                   (ROCR)
+library                   (parallel)
+library                   (reshape2)
+library                   (pheatmap)
+library                   (DoubletFinder)
+library                   (limma)
+library                   (SeuratWrappers)
+library                   (SeuratDisk)
+library                   (plotly)
+library                   (clustree)
+library                   (velocyto.R)
+library                   (MAST)
+library                   (EnhancedVolcano)
+library                   (AnnotationDbi)
+library                   (org.Hs.eg.db)
+library                   (VennDiagram)
+gc                        ()
+```
+
+## Read in cell cycle marker genes
+ 
+```{r}
+s.genes   <- cc.genes$s.genes
+g2m.genes <- cc.genes$g2m.genes
+```
+
+# Load the Petropoulos et al. 2016 data
+
+```{r}
+petropoulos_counts   <- read_tsv           ("~/Desktop/E-MTAB-3929/counts.txt")
+petropoulos_counts   <- petropoulos_counts[!duplicated (petropoulos_counts$...1), ]
+petropoulos_counts   <- column_to_rownames (petropoulos_counts, var = "...1")
+petropoulos_metadata <- read.delim         ("~/Desktop/E-MTAB-3929/E-MTAB-3929.sdrf.txt", row.names = 1)
+petropoulos_metadata <- petropoulos_metadata[ , c(7, 8, 9, 10, 11, 12, 13, 14)]
+petropoulos          <- CreateSeuratObject (counts = petropoulos_counts, meta.data = petropoulos_metadata)
+
+rm (petropoulos_counts)
+rm (petropoulos_metadata)
+```
+
+```{r}
+Idents (petropoulos) <- petropoulos@meta.data$Characteristics.individual.
+```
+
+```{r}
+E3.1 <- subset           (petropoulos, idents = c("E3.1"))
+E3.1 <- AddMetaData      (E3.1, metadata = "IVF",        col.name = "Model"    )
+E3.1 <- AddMetaData      (E3.1, metadata = "Blastocyst", col.name = "Source"   )
+E3.1 <- AddMetaData      (E3.1, metadata = "E3.1",       col.name = "ID"       )
+E3.1 <- AddMetaData      (E3.1, metadata = "P_E3.1",     col.name = "rawID"    )
+E3.1 <- AddMetaData      (E3.1, metadata = "E3",         col.name = "rawGA"    )
+E3.1 <- AddMetaData      (E3.1, metadata = "E3",         col.name = "GA"       )
+E3.1 <- AddMetaData      (E3.1, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.1 <- AddMetaData      (E3.1, metadata = "IVF",        col.name = "Type"     )
+E3.1 <- AddMetaData      (E3.1, metadata = "SS2",        col.name = "Gate"     )
+E3.1 <- AddMetaData      (E3.1, metadata = "IVF",        col.name = "Trimester")
+E3.1 <- AddMetaData      (E3.1, metadata = "6",          col.name = "Batch"    )
+E3.1 <- CellCycleScoring (E3.1, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.2 <- subset           (petropoulos, idents = c("E3.2"))
+E3.2 <- AddMetaData      (E3.2, metadata = "IVF",        col.name = "Model"    )
+E3.2 <- AddMetaData      (E3.2, metadata = "Blastocyst", col.name = "Source"   )
+E3.2 <- AddMetaData      (E3.2, metadata = "E3.2",       col.name = "ID"       )
+E3.2 <- AddMetaData      (E3.2, metadata = "P_E3.2",     col.name = "rawID"    )
+E3.2 <- AddMetaData      (E3.2, metadata = "E3",         col.name = "rawGA"    )
+E3.2 <- AddMetaData      (E3.2, metadata = "E3",         col.name = "GA"       )
+E3.2 <- AddMetaData      (E3.2, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.2 <- AddMetaData      (E3.2, metadata = "IVF",        col.name = "Type"     )
+E3.2 <- AddMetaData      (E3.2, metadata = "SS2",        col.name = "Gate"     )
+E3.2 <- AddMetaData      (E3.2, metadata = "IVF",        col.name = "Trimester")
+E3.2 <- AddMetaData      (E3.2, metadata = "6",          col.name = "Batch"    )
+E3.2 <- CellCycleScoring (E3.2, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.3 <- subset           (petropoulos, idents = c("E3.3"))
+E3.3 <- AddMetaData      (E3.3, metadata = "IVF",        col.name = "Model"    )
+E3.3 <- AddMetaData      (E3.3, metadata = "Blastocyst", col.name = "Source"   )
+E3.3 <- AddMetaData      (E3.3, metadata = "E3.3",       col.name = "ID"       )
+E3.3 <- AddMetaData      (E3.3, metadata = "P_E3.3",     col.name = "rawID"    )
+E3.3 <- AddMetaData      (E3.3, metadata = "E3",         col.name = "rawGA"    )
+E3.3 <- AddMetaData      (E3.3, metadata = "E3",         col.name = "GA"       )
+E3.3 <- AddMetaData      (E3.3, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.3 <- AddMetaData      (E3.3, metadata = "IVF",        col.name = "Type"     )
+E3.3 <- AddMetaData      (E3.3, metadata = "SS2",        col.name = "Gate"     )
+E3.3 <- AddMetaData      (E3.3, metadata = "IVF",        col.name = "Trimester")
+E3.3 <- AddMetaData      (E3.3, metadata = "6",          col.name = "Batch"    )
+E3.3 <- CellCycleScoring (E3.3, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.4 <- subset           (petropoulos, idents = c("E3.4"))
+E3.4 <- AddMetaData      (E3.4, metadata = "IVF",        col.name = "Model"    )
+E3.4 <- AddMetaData      (E3.4, metadata = "Blastocyst", col.name = "Source"   )
+E3.4 <- AddMetaData      (E3.4, metadata = "E3.4",       col.name = "ID"       )
+E3.4 <- AddMetaData      (E3.4, metadata = "P_E3.4",     col.name = "rawID"    )
+E3.4 <- AddMetaData      (E3.4, metadata = "E3",         col.name = "rawGA"    )
+E3.4 <- AddMetaData      (E3.4, metadata = "E3",         col.name = "GA"       )
+E3.4 <- AddMetaData      (E3.4, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.4 <- AddMetaData      (E3.4, metadata = "IVF",        col.name = "Type"     )
+E3.4 <- AddMetaData      (E3.4, metadata = "SS2",        col.name = "Gate"     )
+E3.4 <- AddMetaData      (E3.4, metadata = "First",      col.name = "Trimester")
+E3.4 <- AddMetaData      (E3.4, metadata = "6",          col.name = "Batch"    )
+E3.4 <- CellCycleScoring (E3.4, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.45 <- subset           (petropoulos, idents = c("E3.45"))
+E3.45 <- AddMetaData      (E3.45, metadata = "IVF",        col.name = "Model"    )
+E3.45 <- AddMetaData      (E3.45, metadata = "Blastocyst", col.name = "Source"   )
+E3.45 <- AddMetaData      (E3.45, metadata = "E3.45",      col.name = "ID"       )
+E3.45 <- AddMetaData      (E3.45, metadata = "P_E3.45",    col.name = "rawID"    )
+E3.45 <- AddMetaData      (E3.45, metadata = "E3",         col.name = "rawGA"    )
+E3.45 <- AddMetaData      (E3.45, metadata = "E3",         col.name = "GA"       )
+E3.45 <- AddMetaData      (E3.45, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.45 <- AddMetaData      (E3.45, metadata = "IVF",        col.name = "Type"     )
+E3.45 <- AddMetaData      (E3.45, metadata = "SS2",        col.name = "Gate"     )
+E3.45 <- AddMetaData      (E3.45, metadata = "IVF",        col.name = "Trimester")
+E3.45 <- AddMetaData      (E3.45, metadata = "6",          col.name = "Batch"    )
+E3.45 <- CellCycleScoring (E3.45, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.46 <- subset           (petropoulos, idents = c("E3.46"))
+E3.46 <- AddMetaData      (E3.46, metadata = "IVF",        col.name = "Model"    )
+E3.46 <- AddMetaData      (E3.46, metadata = "Blastocyst", col.name = "Source"   )
+E3.46 <- AddMetaData      (E3.46, metadata = "E3.46",      col.name = "ID"       )
+E3.46 <- AddMetaData      (E3.46, metadata = "P_E3.46",    col.name = "rawID"    )
+E3.46 <- AddMetaData      (E3.46, metadata = "E3",         col.name = "rawGA"    )
+E3.46 <- AddMetaData      (E3.46, metadata = "E3",         col.name = "GA"       )
+E3.46 <- AddMetaData      (E3.46, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.46 <- AddMetaData      (E3.46, metadata = "IVF",        col.name = "Type"     )
+E3.46 <- AddMetaData      (E3.46, metadata = "SS2",        col.name = "Gate"     )
+E3.46 <- AddMetaData      (E3.46, metadata = "IVF",        col.name = "Trimester")
+E3.46 <- AddMetaData      (E3.46, metadata = "6",          col.name = "Batch"    )
+E3.46 <- CellCycleScoring (E3.46, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.47 <- subset           (petropoulos, idents = c("E3.47"))
+E3.47 <- AddMetaData      (E3.47, metadata = "IVF",        col.name = "Model"    )
+E3.47 <- AddMetaData      (E3.47, metadata = "Blastocyst", col.name = "Source"   )
+E3.47 <- AddMetaData      (E3.47, metadata = "E3.47",      col.name = "ID"       )
+E3.47 <- AddMetaData      (E3.47, metadata = "P_E3.47",    col.name = "rawID"    )
+E3.47 <- AddMetaData      (E3.47, metadata = "E3",         col.name = "rawGA"    )
+E3.47 <- AddMetaData      (E3.47, metadata = "E3",         col.name = "GA"       )
+E3.47 <- AddMetaData      (E3.47, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.47 <- AddMetaData      (E3.47, metadata = "IVF",        col.name = "Type"     )
+E3.47 <- AddMetaData      (E3.47, metadata = "SS2",        col.name = "Gate"     )
+E3.47 <- AddMetaData      (E3.47, metadata = "IVF",        col.name = "Trimester")
+E3.47 <- AddMetaData      (E3.47, metadata = "6",          col.name = "Batch"    )
+E3.47 <- CellCycleScoring (E3.47, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.48 <- subset           (petropoulos, idents = c("E3.48"))
+E3.48 <- AddMetaData      (E3.48, metadata = "IVF",        col.name = "Model"    )
+E3.48 <- AddMetaData      (E3.48, metadata = "Blastocyst", col.name = "Source"   )
+E3.48 <- AddMetaData      (E3.48, metadata = "E3.48",      col.name = "ID"       )
+E3.48 <- AddMetaData      (E3.48, metadata = "P_E3.48",    col.name = "rawID"    )
+E3.48 <- AddMetaData      (E3.48, metadata = "E3",         col.name = "rawGA"    )
+E3.48 <- AddMetaData      (E3.48, metadata = "E3",         col.name = "GA"       )
+E3.48 <- AddMetaData      (E3.48, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.48 <- AddMetaData      (E3.48, metadata = "IVF",        col.name = "Type"     )
+E3.48 <- AddMetaData      (E3.48, metadata = "SS2",        col.name = "Gate"     )
+E3.48 <- AddMetaData      (E3.48, metadata = "IVF",        col.name = "Trimester")
+E3.48 <- AddMetaData      (E3.48, metadata = "6",          col.name = "Batch"    )
+E3.48 <- CellCycleScoring (E3.48, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.49 <- subset           (petropoulos, idents = c("E3.49"))
+E3.49 <- AddMetaData      (E3.49, metadata = "IVF",        col.name = "Model"    )
+E3.49 <- AddMetaData      (E3.49, metadata = "Blastocyst", col.name = "Source"   )
+E3.49 <- AddMetaData      (E3.49, metadata = "E3.49",      col.name = "ID"       )
+E3.49 <- AddMetaData      (E3.49, metadata = "P_E3.49",    col.name = "rawID"    )
+E3.49 <- AddMetaData      (E3.49, metadata = "E3",         col.name = "rawGA"    )
+E3.49 <- AddMetaData      (E3.49, metadata = "E3",         col.name = "GA"       )
+E3.49 <- AddMetaData      (E3.49, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.49 <- AddMetaData      (E3.49, metadata = "IVF",        col.name = "Type"     )
+E3.49 <- AddMetaData      (E3.49, metadata = "SS2",        col.name = "Gate"     )
+E3.49 <- AddMetaData      (E3.49, metadata = "IVF",        col.name = "Trimester")
+E3.49 <- AddMetaData      (E3.49, metadata = "6",          col.name = "Batch"    )
+E3.49 <- CellCycleScoring (E3.49, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.50 <- subset           (petropoulos, idents = c("E3.50"))
+E3.50 <- AddMetaData      (E3.50, metadata = "IVF",        col.name = "Model"    )
+E3.50 <- AddMetaData      (E3.50, metadata = "Blastocyst", col.name = "Source"   )
+E3.50 <- AddMetaData      (E3.50, metadata = "E3.50",      col.name = "ID"       )
+E3.50 <- AddMetaData      (E3.50, metadata = "P_E3.50",    col.name = "rawID"    )
+E3.50 <- AddMetaData      (E3.50, metadata = "E3",         col.name = "rawGA"    )
+E3.50 <- AddMetaData      (E3.50, metadata = "E3",         col.name = "GA"       )
+E3.50 <- AddMetaData      (E3.50, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.50 <- AddMetaData      (E3.50, metadata = "IVF",        col.name = "Type"     )
+E3.50 <- AddMetaData      (E3.50, metadata = "SS2",        col.name = "Gate"     )
+E3.50 <- AddMetaData      (E3.50, metadata = "IVF",        col.name = "Trimester")
+E3.50 <- AddMetaData      (E3.50, metadata = "6",          col.name = "Batch"    )
+E3.50 <- CellCycleScoring (E3.50, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.51 <- subset           (petropoulos, idents = c("E3.51"))
+E3.51 <- AddMetaData      (E3.51, metadata = "IVF",        col.name = "Model"    )
+E3.51 <- AddMetaData      (E3.51, metadata = "Blastocyst", col.name = "Source"   )
+E3.51 <- AddMetaData      (E3.51, metadata = "E3.51",      col.name = "ID"       )
+E3.51 <- AddMetaData      (E3.51, metadata = "P_E3.51",    col.name = "rawID"    )
+E3.51 <- AddMetaData      (E3.51, metadata = "E3",         col.name = "rawGA"    )
+E3.51 <- AddMetaData      (E3.51, metadata = "E3",         col.name = "GA"       )
+E3.51 <- AddMetaData      (E3.51, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.51 <- AddMetaData      (E3.51, metadata = "IVF",        col.name = "Type"     )
+E3.51 <- AddMetaData      (E3.51, metadata = "SS2",        col.name = "Gate"     )
+E3.51 <- AddMetaData      (E3.51, metadata = "IVF",        col.name = "Trimester")
+E3.51 <- AddMetaData      (E3.51, metadata = "6",          col.name = "Batch"    )
+E3.51 <- CellCycleScoring (E3.51, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.52 <- subset           (petropoulos, idents = c("E3.52"))
+E3.52 <- AddMetaData      (E3.52, metadata = "IVF",        col.name = "Model"    )
+E3.52 <- AddMetaData      (E3.52, metadata = "Blastocyst", col.name = "Source"   )
+E3.52 <- AddMetaData      (E3.52, metadata = "E3.52",      col.name = "ID"       )
+E3.52 <- AddMetaData      (E3.52, metadata = "P_E3.52",    col.name = "rawID"    )
+E3.52 <- AddMetaData      (E3.52, metadata = "E3",         col.name = "rawGA"    )
+E3.52 <- AddMetaData      (E3.52, metadata = "E3",         col.name = "GA"       )
+E3.52 <- AddMetaData      (E3.52, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.52 <- AddMetaData      (E3.52, metadata = "IVF",        col.name = "Type"     )
+E3.52 <- AddMetaData      (E3.52, metadata = "SS2",        col.name = "Gate"     )
+E3.52 <- AddMetaData      (E3.52, metadata = "IVF",        col.name = "Trimester")
+E3.52 <- AddMetaData      (E3.52, metadata = "6",          col.name = "Batch"    )
+E3.52 <- CellCycleScoring (E3.52, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3.53 <- subset           (petropoulos, idents = c("E3.53"))
+E3.53 <- AddMetaData      (E3.53, metadata = "IVF",        col.name = "Model"    )
+E3.53 <- AddMetaData      (E3.53, metadata = "Blastocyst", col.name = "Source"   )
+E3.53 <- AddMetaData      (E3.53, metadata = "E3.53",      col.name = "ID"       )
+E3.53 <- AddMetaData      (E3.53, metadata = "P_E3.53",    col.name = "rawID"    )
+E3.53 <- AddMetaData      (E3.53, metadata = "E3",         col.name = "rawGA"    )
+E3.53 <- AddMetaData      (E3.53, metadata = "E3",         col.name = "GA"       )
+E3.53 <- AddMetaData      (E3.53, metadata = "Blastocyst", col.name = "Tissue"   )
+E3.53 <- AddMetaData      (E3.53, metadata = "IVF",        col.name = "Type"     )
+E3.53 <- AddMetaData      (E3.53, metadata = "SS2",        col.name = "Gate"     )
+E3.53 <- AddMetaData      (E3.53, metadata = "IVF",        col.name = "Trimester")
+E3.53 <- AddMetaData      (E3.53, metadata = "6",          col.name = "Batch"    )
+E3.53 <- CellCycleScoring (E3.53, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E3 <- merge (E3.1, y = c(E3.2,
+                         E3.3,
+                         E3.4,
+                         E3.45,
+                         E3.46,
+                         E3.47,
+                         E3.48,
+                         E3.49,
+                         E3.50,
+                         E3.51,
+                         E3.52,
+                         E3.53), project = "10X_E3")
+
+E3 <- NormalizeData        (E3)
+E3 <- ScaleData            (E3)
+E3 <- FindVariableFeatures (E3, selection.method = "vst", nfeatures = 2000)
+E3 <- RunPCA               (E3)
+E3 <- RunUMAP              (E3, dims = 1:50)
+
+rm (E3.1, E3.2, E3.3, E3.4, E3.45, E3.46, E3.47, E3.48, E3.49, E3.50, E3.51, E3.52, E3.53)
+```
+
+```{r}
+E4.1 <- subset           (petropoulos, idents = c("E4.1"))
+E4.1 <- AddMetaData      (E4.1, metadata = "IVF",        col.name = "Model"    )
+E4.1 <- AddMetaData      (E4.1, metadata = "Blastocyst", col.name = "Source"   )
+E4.1 <- AddMetaData      (E4.1, metadata = "E4.1",       col.name = "ID"       )
+E4.1 <- AddMetaData      (E4.1, metadata = "P_E4.1",     col.name = "rawID"    )
+E4.1 <- AddMetaData      (E4.1, metadata = "E4",         col.name = "rawGA"    )
+E4.1 <- AddMetaData      (E4.1, metadata = "E4",         col.name = "GA"       )
+E4.1 <- AddMetaData      (E4.1, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.1 <- AddMetaData      (E4.1, metadata = "IVF",        col.name = "Type"     )
+E4.1 <- AddMetaData      (E4.1, metadata = "SS2",        col.name = "Gate"     )
+E4.1 <- AddMetaData      (E4.1, metadata = "IVF",        col.name = "Trimester")
+E4.1 <- AddMetaData      (E4.1, metadata = "6",          col.name = "Batch"    )
+E4.1 <- CellCycleScoring (E4.1, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.101 <- subset           (petropoulos, idents = c("E4.10", "E4.11"))
+E4.101 <- AddMetaData      (E4.101, metadata = "IVF",            col.name = "Model"    )
+E4.101 <- AddMetaData      (E4.101, metadata = "Blastocyst",     col.name = "Source"   )
+E4.101 <- AddMetaData      (E4.101, metadata = "E4.10_E4.11",    col.name = "ID"       )
+E4.101 <- AddMetaData      (E4.101, metadata = "P_E4.10_E4.11",  col.name = "rawID"    )
+E4.101 <- AddMetaData      (E4.101, metadata = "E4",             col.name = "rawGA"    )
+E4.101 <- AddMetaData      (E4.101, metadata = "E4",             col.name = "GA"       )
+E4.101 <- AddMetaData      (E4.101, metadata = "Blastocyst",     col.name = "Tissue"   )
+E4.101 <- AddMetaData      (E4.101, metadata = "IVF",            col.name = "Type"     )
+E4.101 <- AddMetaData      (E4.101, metadata = "SS2",            col.name = "Gate"     )
+E4.101 <- AddMetaData      (E4.101, metadata = "IVF",            col.name = "Trimester")
+E4.101 <- AddMetaData      (E4.101, metadata = "6",              col.name = "Batch"    )
+E4.101 <- CellCycleScoring (E4.101, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.2 <- subset           (petropoulos, idents = c("E4.2"))
+E4.2 <- AddMetaData      (E4.2, metadata = "IVF",        col.name = "Model"    )
+E4.2 <- AddMetaData      (E4.2, metadata = "Blastocyst", col.name = "Source"   )
+E4.2 <- AddMetaData      (E4.2, metadata = "E4.2",       col.name = "ID"       )
+E4.2 <- AddMetaData      (E4.2, metadata = "P_E4.2",     col.name = "rawID"    )
+E4.2 <- AddMetaData      (E4.2, metadata = "E4",         col.name = "rawGA"    )
+E4.2 <- AddMetaData      (E4.2, metadata = "E4",         col.name = "GA"       )
+E4.2 <- AddMetaData      (E4.2, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.2 <- AddMetaData      (E4.2, metadata = "IVF",        col.name = "Type"     )
+E4.2 <- AddMetaData      (E4.2, metadata = "SS2",        col.name = "Gate"     )
+E4.2 <- AddMetaData      (E4.2, metadata = "IVF",        col.name = "Trimester")
+E4.2 <- AddMetaData      (E4.2, metadata = "6",          col.name = "Batch"    )
+E4.2 <- CellCycleScoring (E4.2, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.24_5_0_4 <- subset           (petropoulos, idents = c("E4.24_5_0_4"))
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "IVF",           col.name = "Model"    )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "Blastocyst",    col.name = "Source"   )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "E4.24_5_0_4",   col.name = "ID"       )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "P_E4.24_5_0_4", col.name = "rawID"    )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "E4",            col.name = "rawGA"    )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "E4",            col.name = "GA"       )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "Blastocyst",    col.name = "Tissue"   )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "IVF",           col.name = "Type"     )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "SS2",           col.name = "Gate"     )
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "IVF",           col.name = "Trimester")
+E4.24_5_0_4 <- AddMetaData      (E4.24_5_0_4, metadata = "6",             col.name = "Batch"    )
+E4.24_5_0_4 <- CellCycleScoring (E4.24_5_0_4, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.3 <- subset           (petropoulos, idents = c("E4.3"))
+E4.3 <- AddMetaData      (E4.3, metadata = "IVF",        col.name = "Model"    )
+E4.3 <- AddMetaData      (E4.3, metadata = "Blastocyst", col.name = "Source"   )
+E4.3 <- AddMetaData      (E4.3, metadata = "E4.3",       col.name = "ID"       )
+E4.3 <- AddMetaData      (E4.3, metadata = "P_E4.3",     col.name = "rawID"    )
+E4.3 <- AddMetaData      (E4.3, metadata = "E4",         col.name = "rawGA"    )
+E4.3 <- AddMetaData      (E4.3, metadata = "E4",         col.name = "GA"       )
+E4.3 <- AddMetaData      (E4.3, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.3 <- AddMetaData      (E4.3, metadata = "IVF",        col.name = "Type"     )
+E4.3 <- AddMetaData      (E4.3, metadata = "SS2",        col.name = "Gate"     )
+E4.3 <- AddMetaData      (E4.3, metadata = "First",      col.name = "Trimester")
+E4.3 <- AddMetaData      (E4.3, metadata = "6",          col.name = "Batch"    )
+E4.3 <- CellCycleScoring (E4.3, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.31_5_1 <- subset           (petropoulos, idents = c("E4.31_5_1"))
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "IVF",         col.name = "Model"    )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "Blastocyst",  col.name = "Source"   )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "E4.31_5_1",   col.name = "ID"       )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "P_E4.31_5_1", col.name = "rawID"    )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "E4",          col.name = "rawGA"    )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "E4",          col.name = "GA"       )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "Blastocyst",  col.name = "Tissue"   )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "IVF",         col.name = "Type"     )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "SS2",         col.name = "Gate"     )
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "IVF",         col.name = "Trimester")
+E4.31_5_1 <- AddMetaData      (E4.31_5_1, metadata = "6",           col.name = "Batch"    )
+E4.31_5_1 <- CellCycleScoring (E4.31_5_1, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.4 <- subset           (petropoulos, idents = c("E4.4"))
+E4.4 <- AddMetaData      (E4.4, metadata = "IVF",        col.name = "Model"    )
+E4.4 <- AddMetaData      (E4.4, metadata = "Blastocyst", col.name = "Source"   )
+E4.4 <- AddMetaData      (E4.4, metadata = "E4.4",       col.name = "ID"       )
+E4.4 <- AddMetaData      (E4.4, metadata = "P_E4.4",     col.name = "rawID"    )
+E4.4 <- AddMetaData      (E4.4, metadata = "E4",         col.name = "rawGA"    )
+E4.4 <- AddMetaData      (E4.4, metadata = "E4",         col.name = "GA"       )
+E4.4 <- AddMetaData      (E4.4, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.4 <- AddMetaData      (E4.4, metadata = "IVF",        col.name = "Type"     )
+E4.4 <- AddMetaData      (E4.4, metadata = "SS2",        col.name = "Gate"     )
+E4.4 <- AddMetaData      (E4.4, metadata = "IVF",        col.name = "Trimester")
+E4.4 <- AddMetaData      (E4.4, metadata = "6",          col.name = "Batch"    )
+E4.4 <- CellCycleScoring (E4.4, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.5 <- subset           (petropoulos, idents = c("E4.5"))
+E4.5 <- AddMetaData      (E4.5, metadata = "IVF",        col.name = "Model"    )
+E4.5 <- AddMetaData      (E4.5, metadata = "Blastocyst", col.name = "Source"   )
+E4.5 <- AddMetaData      (E4.5, metadata = "E4.5",       col.name = "ID"       )
+E4.5 <- AddMetaData      (E4.5, metadata = "P_E4.5",     col.name = "rawID"    )
+E4.5 <- AddMetaData      (E4.5, metadata = "E4",         col.name = "rawGA"    )
+E4.5 <- AddMetaData      (E4.5, metadata = "E4",         col.name = "GA"       )
+E4.5 <- AddMetaData      (E4.5, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.5 <- AddMetaData      (E4.5, metadata = "IVF",        col.name = "Type"     )
+E4.5 <- AddMetaData      (E4.5, metadata = "SS2",        col.name = "Gate"     )
+E4.5 <- AddMetaData      (E4.5, metadata = "IVF",        col.name = "Trimester")
+E4.5 <- AddMetaData      (E4.5, metadata = "6",          col.name = "Batch"    )
+E4.5 <- CellCycleScoring (E4.5, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.6 <- subset           (petropoulos, idents = c("E4.6"))
+E4.6 <- AddMetaData      (E4.6, metadata = "IVF",        col.name = "Model"    )
+E4.6 <- AddMetaData      (E4.6, metadata = "Blastocyst", col.name = "Source"   )
+E4.6 <- AddMetaData      (E4.6, metadata = "E4.6",       col.name = "ID"       )
+E4.6 <- AddMetaData      (E4.6, metadata = "P_E4.6",     col.name = "rawID"    )
+E4.6 <- AddMetaData      (E4.6, metadata = "E4",         col.name = "rawGA"    )
+E4.6 <- AddMetaData      (E4.6, metadata = "E4",         col.name = "GA"       )
+E4.6 <- AddMetaData      (E4.6, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.6 <- AddMetaData      (E4.6, metadata = "IVF",        col.name = "Type"     )
+E4.6 <- AddMetaData      (E4.6, metadata = "SS2",        col.name = "Gate"     )
+E4.6 <- AddMetaData      (E4.6, metadata = "IVF",        col.name = "Trimester")
+E4.6 <- AddMetaData      (E4.6, metadata = "6",          col.name = "Batch"    )
+E4.6 <- CellCycleScoring (E4.6, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.7 <- subset           (petropoulos, idents = c("E4.7"))
+E4.7 <- AddMetaData      (E4.7, metadata = "IVF",        col.name = "Model"    )
+E4.7 <- AddMetaData      (E4.7, metadata = "Blastocyst", col.name = "Source"   )
+E4.7 <- AddMetaData      (E4.7, metadata = "E4.7",       col.name = "ID"       )
+E4.7 <- AddMetaData      (E4.7, metadata = "P_E4.7",     col.name = "rawID"    )
+E4.7 <- AddMetaData      (E4.7, metadata = "E4",         col.name = "rawGA"    )
+E4.7 <- AddMetaData      (E4.7, metadata = "E4",         col.name = "GA"       )
+E4.7 <- AddMetaData      (E4.7, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.7 <- AddMetaData      (E4.7, metadata = "IVF",        col.name = "Type"     )
+E4.7 <- AddMetaData      (E4.7, metadata = "SS2",        col.name = "Gate"     )
+E4.7 <- AddMetaData      (E4.7, metadata = "IVF",        col.name = "Trimester")
+E4.7 <- AddMetaData      (E4.7, metadata = "6",          col.name = "Batch"    )
+E4.7 <- CellCycleScoring (E4.7, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.8 <- subset           (petropoulos, idents = c("E4.8"))
+E4.8 <- AddMetaData      (E4.8, metadata = "IVF",        col.name = "Model"    )
+E4.8 <- AddMetaData      (E4.8, metadata = "Blastocyst", col.name = "Source"   )
+E4.8 <- AddMetaData      (E4.8, metadata = "E4.8",       col.name = "ID"       )
+E4.8 <- AddMetaData      (E4.8, metadata = "P_E4.8",     col.name = "rawID"    )
+E4.8 <- AddMetaData      (E4.8, metadata = "E4",         col.name = "rawGA"    )
+E4.8 <- AddMetaData      (E4.8, metadata = "E4",         col.name = "GA"       )
+E4.8 <- AddMetaData      (E4.8, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.8 <- AddMetaData      (E4.8, metadata = "IVF",        col.name = "Type"     )
+E4.8 <- AddMetaData      (E4.8, metadata = "SS2",        col.name = "Gate"     )
+E4.8 <- AddMetaData      (E4.8, metadata = "IVF",        col.name = "Trimester")
+E4.8 <- AddMetaData      (E4.8, metadata = "6",          col.name = "Batch"    )
+E4.8 <- CellCycleScoring (E4.8, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.9 <- subset           (petropoulos, idents = c("E4.9"))
+E4.9 <- AddMetaData      (E4.9, metadata = "IVF",        col.name = "Model"    )
+E4.9 <- AddMetaData      (E4.9, metadata = "Blastocyst", col.name = "Source"   )
+E4.9 <- AddMetaData      (E4.9, metadata = "E4.9",       col.name = "ID"       )
+E4.9 <- AddMetaData      (E4.9, metadata = "P_E4.9",     col.name = "rawID"    )
+E4.9 <- AddMetaData      (E4.9, metadata = "E4",         col.name = "rawGA"    )
+E4.9 <- AddMetaData      (E4.9, metadata = "E4",         col.name = "GA"       )
+E4.9 <- AddMetaData      (E4.9, metadata = "Blastocyst", col.name = "Tissue"   )
+E4.9 <- AddMetaData      (E4.9, metadata = "IVF",        col.name = "Type"     )
+E4.9 <- AddMetaData      (E4.9, metadata = "SS2",        col.name = "Gate"     )
+E4.9 <- AddMetaData      (E4.9, metadata = "IVF",        col.name = "Trimester")
+E4.9 <- AddMetaData      (E4.9, metadata = "6",          col.name = "Batch"    )
+E4.9 <- CellCycleScoring (E4.9, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4 <- merge (E4.1, y = c(E4.101,
+                         E4.2,
+                         E4.24_5_0_4,
+                         E4.3,
+                         E4.31_5_1,
+                         E4.4,
+                         E4.5,
+                         E4.6,
+                         E4.7,
+                         E4.8,
+                         E4.9), project = "10X_E4")
+
+E4 <- NormalizeData        (E4)
+E4 <- ScaleData            (E4)
+E4 <- FindVariableFeatures (E4, selection.method = "vst", nfeatures = 2000)
+E4 <- RunPCA               (E4)
+E4 <- RunUMAP              (E4, dims = 1:50)
+
+rm (E4.1, E4.101, E4.2, E4.24_5_0_4, E4.3, E4.31_5_1, E4.4, E4.5, E4.6, E4.7, E4.8, E4.9)
+```
+
+```{r}
+E4.late.33 <- subset           (petropoulos, idents = c("E4.late.33"))
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "IVF",          col.name = "Model"    )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "Blastocyst",   col.name = "Source"   )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "E4.late.33",   col.name = "ID"       )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "P_E4.late.33", col.name = "rawID"    )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "E4.late",      col.name = "rawGA"    )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "E4",           col.name = "GA"       )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "Blastocyst",   col.name = "Tissue"   )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "IVF",          col.name = "Type"     )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "SS2",          col.name = "Gate"     )
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "IVF",          col.name = "Trimester")
+E4.late.33 <- AddMetaData      (E4.late.33, metadata = "6",            col.name = "Batch"    )
+E4.late.33 <- CellCycleScoring (E4.late.33, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.late.34 <- subset           (petropoulos, idents = c("E4.late.34"))
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "IVF",          col.name = "Model"    )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "Blastocyst",   col.name = "Source"   )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "E4.late.34",   col.name = "ID"       )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "P_E4.late.34", col.name = "rawID"    )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "E4.late",      col.name = "rawGA"    )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "E4",           col.name = "GA"       )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "Blastocyst",   col.name = "Tissue"   )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "IVF",          col.name = "Type"     )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "SS2",          col.name = "Gate"     )
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "IVF",          col.name = "Trimester")
+E4.late.34 <- AddMetaData      (E4.late.34, metadata = "6",            col.name = "Batch"    )
+E4.late.34 <- CellCycleScoring (E4.late.34, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.late.35 <- subset           (petropoulos, idents = c("E4.late.35"))
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "IVF",          col.name = "Model"    )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "Blastocyst",   col.name = "Source"   )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "E4.late.35",   col.name = "ID"       )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "P_E4.late.35", col.name = "rawID"    )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "E4.late",      col.name = "rawGA"    )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "E4",           col.name = "GA"       )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "Blastocyst",   col.name = "Tissue"   )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "IVF",          col.name = "Type"     ) 
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "SS2",          col.name = "Gate"     )
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "IVF",          col.name = "Trimester")
+E4.late.35 <- AddMetaData      (E4.late.35, metadata = "6",            col.name = "Batch"    )
+E4.late.35 <- CellCycleScoring (E4.late.35, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E4.late <- merge (E4.late.33, y = c(E4.late.34, E4.late.35), merge.data = TRUE, project = "10X_E4_late")
+
+E4.late <- NormalizeData        (E4.late)
+E4.late <- ScaleData            (E4.late)
+E4.late <- FindVariableFeatures (E4.late, selection.method = "vst", nfeatures = 2000)
+E4.late <- RunPCA               (E4.late, npcs = 47)
+E4.late <- RunUMAP              (E4.late, dims = 1:47)
+
+rm (E4.late.33, E4.late.34, E4.late.35)
+```
+
+```{r}    
+E5.early.31 <- subset           (petropoulos, idents = c("E5.early.31"))
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "IVF",           col.name = "Model"    )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "Blastocyst",    col.name = "Source"   )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "E5.early.31",   col.name = "ID"       )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "P_E5.early.31", col.name = "rawID"    )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "E5.early",      col.name = "rawGA"    )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "E5",            col.name = "GA"       )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "Blastocyst",    col.name = "Tissue"   )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "IVF",           col.name = "Type"     )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "SS2",           col.name = "Gate"     )
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "IVF",           col.name = "Trimester")
+E5.early.31 <- AddMetaData      (E5.early.31, metadata = "6",             col.name = "Batch"    )
+E5.early.31 <- CellCycleScoring (E5.early.31, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.early.36 <- subset           (petropoulos, idents = c("E5.early.36"))
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "IVF",           col.name = "Model"    )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "Blastocyst",    col.name = "Source"   )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "E5.early.36",   col.name = "ID"       )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "P_E5.early.36", col.name = "rawID"    )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "E5.early",      col.name = "rawGA"    )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "E5",            col.name = "GA"       )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "Blastocyst",    col.name = "Tissue"   )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "IVF",           col.name = "Type"     )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "SS2",           col.name = "Gate"     )
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "IVF",           col.name = "Trimester")
+E5.early.36 <- AddMetaData      (E5.early.36, metadata = "6",             col.name = "Batch"    )
+E5.early.36 <- CellCycleScoring (E5.early.36, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+```
+
+```{r}
+E5.1 <- subset           (petropoulos, idents = c("E5.1"))
+E5.1 <- AddMetaData      (E5.1, metadata = "IVF",          col.name = "Model"    )
+E5.1 <- AddMetaData      (E5.1, metadata = "Blastocyst",   col.name = "Source"   )
+E5.1 <- AddMetaData      (E5.1, metadata = "E5.1",         col.name = "ID"       )
+E5.1 <- AddMetaData      (E5.1, metadata = "P_E5.1",       col.name = "rawID"    )
+E5.1 <- AddMetaData      (E5.1, metadata = "E5",           col.name = "rawGA"    )
+E5.1 <- AddMetaData      (E5.1, metadata = "E5",           col.name = "GA"       )
+E5.1 <- AddMetaData      (E5.1, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.1 <- AddMetaData      (E5.1, metadata = "IVF",          col.name = "Type"     )
+E5.1 <- AddMetaData      (E5.1, metadata = "SS2",          col.name = "Gate"     )
+E5.1 <- AddMetaData      (E5.1, metadata = "IVF",          col.name = "Trimester")
+E5.1 <- AddMetaData      (E5.1, metadata = "6",            col.name = "Batch"    )
+E5.1 <- CellCycleScoring (E5.1, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.10 <- subset           (petropoulos, idents = c("E5.10"))
+E5.10 <- AddMetaData      (E5.10, metadata = "IVF",          col.name = "Model"    )
+E5.10 <- AddMetaData      (E5.10, metadata = "Blastocyst",   col.name = "Source"   )
+E5.10 <- AddMetaData      (E5.10, metadata = "E5.10",        col.name = "ID"       )
+E5.10 <- AddMetaData      (E5.10, metadata = "P_E5.10",      col.name = "rawID"    )
+E5.10 <- AddMetaData      (E5.10, metadata = "E5",           col.name = "rawGA"    )
+E5.10 <- AddMetaData      (E5.10, metadata = "E5",           col.name = "GA"       )
+E5.10 <- AddMetaData      (E5.10, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.10 <- AddMetaData      (E5.10, metadata = "IVF",          col.name = "Type"     )
+E5.10 <- AddMetaData      (E5.10, metadata = "SS2",          col.name = "Gate"     )
+E5.10 <- AddMetaData      (E5.10, metadata = "IVF",          col.name = "Trimester")
+E5.10 <- AddMetaData      (E5.10, metadata = "6",            col.name = "Batch"    )
+E5.10 <- CellCycleScoring (E5.10, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.11 <- subset           (petropoulos, idents = c("E5.11"))
+E5.11 <- AddMetaData      (E5.11, metadata = "IVF",          col.name = "Model"    )
+E5.11 <- AddMetaData      (E5.11, metadata = "Blastocyst",   col.name = "Source"   )
+E5.11 <- AddMetaData      (E5.11, metadata = "E5.11",        col.name = "ID"       )
+E5.11 <- AddMetaData      (E5.11, metadata = "P_E5.11",      col.name = "rawID"    )
+E5.11 <- AddMetaData      (E5.11, metadata = "E5",           col.name = "rawGA"    )
+E5.11 <- AddMetaData      (E5.11, metadata = "E5",           col.name = "GA"       )
+E5.11 <- AddMetaData      (E5.11, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.11 <- AddMetaData      (E5.11, metadata = "IVF",          col.name = "Type"     )
+E5.11 <- AddMetaData      (E5.11, metadata = "SS2",          col.name = "Gate"     )
+E5.11 <- AddMetaData      (E5.11, metadata = "IVF",          col.name = "Trimester")
+E5.11 <- AddMetaData      (E5.11, metadata = "6",            col.name = "Batch"    )
+E5.11 <- CellCycleScoring (E5.11, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.12 <- subset           (petropoulos, idents = c("E5.12"))
+E5.12 <- AddMetaData      (E5.12, metadata = "IVF",          col.name = "Model"    )
+E5.12 <- AddMetaData      (E5.12, metadata = "Blastocyst",   col.name = "Source"   )
+E5.12 <- AddMetaData      (E5.12, metadata = "E5.12",        col.name = "ID"       )
+E5.12 <- AddMetaData      (E5.12, metadata = "P_E5.12",      col.name = "rawID"    )
+E5.12 <- AddMetaData      (E5.12, metadata = "E5",           col.name = "rawGA"    )
+E5.12 <- AddMetaData      (E5.12, metadata = "E5",           col.name = "GA"       )
+E5.12 <- AddMetaData      (E5.12, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.12 <- AddMetaData      (E5.12, metadata = "IVF",          col.name = "Type"     )
+E5.12 <- AddMetaData      (E5.12, metadata = "SS2",          col.name = "Gate"     )
+E5.12 <- AddMetaData      (E5.12, metadata = "IVF",          col.name = "Trimester")
+E5.12 <- AddMetaData      (E5.12, metadata = "6",            col.name = "Batch"    )
+E5.12 <- CellCycleScoring (E5.12, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.13 <- subset           (petropoulos, idents = c("E5.13"))
+E5.13 <- AddMetaData      (E5.13, metadata = "IVF",          col.name = "Model"    )
+E5.13 <- AddMetaData      (E5.13, metadata = "Blastocyst",   col.name = "Source"   )
+E5.13 <- AddMetaData      (E5.13, metadata = "E5.13",        col.name = "ID"       )
+E5.13 <- AddMetaData      (E5.13, metadata = "P_E5.13",      col.name = "rawID"    )
+E5.13 <- AddMetaData      (E5.13, metadata = "E5",           col.name = "rawGA"    )
+E5.13 <- AddMetaData      (E5.13, metadata = "E5",           col.name = "GA"       )
+E5.13 <- AddMetaData      (E5.13, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.13 <- AddMetaData      (E5.13, metadata = "IVF",          col.name = "Type"     )
+E5.13 <- AddMetaData      (E5.13, metadata = "SS2",          col.name = "Gate"     )
+E5.13 <- AddMetaData      (E5.13, metadata = "IVF",          col.name = "Trimester")
+E5.13 <- AddMetaData      (E5.13, metadata = "6",            col.name = "Batch"    )
+E5.13 <- CellCycleScoring (E5.13, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.14 <- subset           (petropoulos, idents = c("E5.14"))
+E5.14 <- AddMetaData      (E5.14, metadata = "IVF",          col.name = "Model"    )
+E5.14 <- AddMetaData      (E5.14, metadata = "Blastocyst",   col.name = "Source"   )
+E5.14 <- AddMetaData      (E5.14, metadata = "E5.14",        col.name = "ID"       )
+E5.14 <- AddMetaData      (E5.14, metadata = "P_E5.14",      col.name = "rawID"    )
+E5.14 <- AddMetaData      (E5.14, metadata = "E5",           col.name = "rawGA"    )
+E5.14 <- AddMetaData      (E5.14, metadata = "E5",           col.name = "GA"       )
+E5.14 <- AddMetaData      (E5.14, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.14 <- AddMetaData      (E5.14, metadata = "IVF",          col.name = "Type"     )
+E5.14 <- AddMetaData      (E5.14, metadata = "SS2",          col.name = "Gate"     )
+E5.14 <- AddMetaData      (E5.14, metadata = "IVF",          col.name = "Trimester")
+E5.14 <- AddMetaData      (E5.14, metadata = "6",            col.name = "Batch"    )
+E5.14 <- CellCycleScoring (E5.14, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.15 <- subset           (petropoulos, idents = c("E5.15"))
+E5.15 <- AddMetaData      (E5.15, metadata = "IVF",          col.name = "Model"    )
+E5.15 <- AddMetaData      (E5.15, metadata = "Blastocyst",   col.name = "Source"   )
+E5.15 <- AddMetaData      (E5.15, metadata = "E5.15",        col.name = "ID"       )
+E5.15 <- AddMetaData      (E5.15, metadata = "P_E5.15",      col.name = "rawID"    )
+E5.15 <- AddMetaData      (E5.15, metadata = "E5",           col.name = "rawGA"    )
+E5.15 <- AddMetaData      (E5.15, metadata = "E5",           col.name = "GA"       )
+E5.15 <- AddMetaData      (E5.15, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.15 <- AddMetaData      (E5.15, metadata = "IVF",          col.name = "Type"     )
+E5.15 <- AddMetaData      (E5.15, metadata = "SS2",          col.name = "Gate"     )
+E5.15 <- AddMetaData      (E5.15, metadata = "IVF",          col.name = "Trimester")
+E5.15 <- AddMetaData      (E5.15, metadata = "6",            col.name = "Batch"    )
+E5.15 <- CellCycleScoring (E5.15, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.16 <- subset           (petropoulos, idents = c("E5.16"))
+E5.16 <- AddMetaData      (E5.16, metadata = "IVF",          col.name = "Model"    )
+E5.16 <- AddMetaData      (E5.16, metadata = "Blastocyst",   col.name = "Source"   )
+E5.16 <- AddMetaData      (E5.16, metadata = "E5.16",        col.name = "ID"       )
+E5.16 <- AddMetaData      (E5.16, metadata = "P_E5.16",      col.name = "rawID"    )
+E5.16 <- AddMetaData      (E5.16, metadata = "E5",           col.name = "rawGA"    )
+E5.16 <- AddMetaData      (E5.16, metadata = "E5",           col.name = "GA"       )
+E5.16 <- AddMetaData      (E5.16, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.16 <- AddMetaData      (E5.16, metadata = "IVF",          col.name = "Type"     )
+E5.16 <- AddMetaData      (E5.16, metadata = "SS2",          col.name = "Gate"     )
+E5.16 <- AddMetaData      (E5.16, metadata = "IVF",          col.name = "Trimester")
+E5.16 <- AddMetaData      (E5.16, metadata = "6",            col.name = "Batch"    )
+E5.16 <- CellCycleScoring (E5.16, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.2 <- subset           (petropoulos, idents = c("E5.2"))
+E5.2 <- AddMetaData      (E5.2, metadata = "IVF",          col.name = "Model"    )
+E5.2 <- AddMetaData      (E5.2, metadata = "Blastocyst",   col.name = "Source"   )
+E5.2 <- AddMetaData      (E5.2, metadata = "E5.2",         col.name = "ID"       )
+E5.2 <- AddMetaData      (E5.2, metadata = "P_E5.2",       col.name = "rawID"    )
+E5.2 <- AddMetaData      (E5.2, metadata = "E5",           col.name = "rawGA"    )
+E5.2 <- AddMetaData      (E5.2, metadata = "E5",           col.name = "GA"       )
+E5.2 <- AddMetaData      (E5.2, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.2 <- AddMetaData      (E5.2, metadata = "IVF",          col.name = "Type"     )
+E5.2 <- AddMetaData      (E5.2, metadata = "SS2",          col.name = "Gate"     )
+E5.2 <- AddMetaData      (E5.2, metadata = "IVF",          col.name = "Trimester")
+E5.2 <- AddMetaData      (E5.2, metadata = "6",            col.name = "Batch"    )
+E5.2 <- CellCycleScoring (E5.2, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.3 <- subset           (petropoulos, idents = c("E5.3"))
+E5.3 <- AddMetaData      (E5.3, metadata = "IVF",          col.name = "Model"    )
+E5.3 <- AddMetaData      (E5.3, metadata = "Blastocyst",   col.name = "Source"   )
+E5.3 <- AddMetaData      (E5.3, metadata = "E5.3",         col.name = "ID"       )
+E5.3 <- AddMetaData      (E5.3, metadata = "P_E5.3",       col.name = "rawID"    )
+E5.3 <- AddMetaData      (E5.3, metadata = "E5",           col.name = "rawGA"    )
+E5.3 <- AddMetaData      (E5.3, metadata = "E5",           col.name = "GA"       )
+E5.3 <- AddMetaData      (E5.3, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.3 <- AddMetaData      (E5.3, metadata = "IVF",          col.name = "Type"     )
+E5.3 <- AddMetaData      (E5.3, metadata = "SS2",          col.name = "Gate"     )
+E5.3 <- AddMetaData      (E5.3, metadata = "IVF",          col.name = "Trimester")
+E5.3 <- AddMetaData      (E5.3, metadata = "6",            col.name = "Batch"    )
+E5.3 <- CellCycleScoring (E5.3, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.37 <- subset           (petropoulos, idents = c("E5.37"))
+E5.37 <- AddMetaData      (E5.37, metadata = "IVF",          col.name = "Model"    )
+E5.37 <- AddMetaData      (E5.37, metadata = "Blastocyst",   col.name = "Source"   )
+E5.37 <- AddMetaData      (E5.37, metadata = "E5.37",        col.name = "ID"       )
+E5.37 <- AddMetaData      (E5.37, metadata = "P_E5.37",      col.name = "rawID"    )
+E5.37 <- AddMetaData      (E5.37, metadata = "E5",           col.name = "rawGA"    )
+E5.37 <- AddMetaData      (E5.37, metadata = "E5",           col.name = "GA"       )
+E5.37 <- AddMetaData      (E5.37, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.37 <- AddMetaData      (E5.37, metadata = "IVF",          col.name = "Type"     )
+E5.37 <- AddMetaData      (E5.37, metadata = "SS2",          col.name = "Gate"     )
+E5.37 <- AddMetaData      (E5.37, metadata = "IVF",          col.name = "Trimester")
+E5.37 <- AddMetaData      (E5.37, metadata = "6",            col.name = "Batch"    )
+E5.37 <- CellCycleScoring (E5.37, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.38 <- subset           (petropoulos, idents = c("E5.38"))
+E5.38 <- AddMetaData      (E5.38, metadata = "IVF",          col.name = "Model"    )
+E5.38 <- AddMetaData      (E5.38, metadata = "Blastocyst",   col.name = "Source"   )
+E5.38 <- AddMetaData      (E5.38, metadata = "E5.38",        col.name = "ID"       )
+E5.38 <- AddMetaData      (E5.38, metadata = "P_E5.38",      col.name = "rawID"    )
+E5.38 <- AddMetaData      (E5.38, metadata = "E5",           col.name = "rawGA"    )
+E5.38 <- AddMetaData      (E5.38, metadata = "E5",           col.name = "GA"       )
+E5.38 <- AddMetaData      (E5.38, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.38 <- AddMetaData      (E5.38, metadata = "IVF",          col.name = "Type"     )
+E5.38 <- AddMetaData      (E5.38, metadata = "SS2",          col.name = "Gate"     )
+E5.38 <- AddMetaData      (E5.38, metadata = "IVF",          col.name = "Trimester")
+E5.38 <- AddMetaData      (E5.38, metadata = "6",            col.name = "Batch"    )
+E5.38 <- CellCycleScoring (E5.38, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.3940 <- subset           (petropoulos, idents = c("E5.39", "E5.40"))
+E5.3940 <- AddMetaData      (E5.3940, metadata = "IVF",           col.name = "Model"    )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "Blastocyst",    col.name = "Source"   )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "E5.39_E5.40",   col.name = "ID"       )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "P_E5.39_E5.40", col.name = "rawID"    )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "E5",            col.name = "rawGA"    )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "E5",            col.name = "GA"       )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "Blastocyst",    col.name = "Tissue"   )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "IVF",           col.name = "Type"     )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "SS2",           col.name = "Gate"     )
+E5.3940 <- AddMetaData      (E5.3940, metadata = "IVF",           col.name = "Trimester")
+E5.3940 <- AddMetaData      (E5.3940, metadata = "6",             col.name = "Batch"    )
+E5.3940 <- CellCycleScoring (E5.3940, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.41 <- subset           (petropoulos, idents = c("E5.41"))
+E5.41 <- AddMetaData      (E5.41, metadata = "IVF",          col.name = "Model"    )
+E5.41 <- AddMetaData      (E5.41, metadata = "Blastocyst",   col.name = "Source"   )
+E5.41 <- AddMetaData      (E5.41, metadata = "E5.41",        col.name = "ID"       )
+E5.41 <- AddMetaData      (E5.41, metadata = "P_E5.41",      col.name = "rawID"    )
+E5.41 <- AddMetaData      (E5.41, metadata = "E5",           col.name = "rawGA"    )
+E5.41 <- AddMetaData      (E5.41, metadata = "E5",           col.name = "GA"       )
+E5.41 <- AddMetaData      (E5.41, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.41 <- AddMetaData      (E5.41, metadata = "IVF",          col.name = "Type"     )
+E5.41 <- AddMetaData      (E5.41, metadata = "SS2",          col.name = "Gate"     )
+E5.41 <- AddMetaData      (E5.41, metadata = "IVF",          col.name = "Trimester")
+E5.41 <- AddMetaData      (E5.41, metadata = "6",            col.name = "Batch"    )
+E5.41 <- CellCycleScoring (E5.41, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.42 <- subset           (petropoulos, idents = c("E5.42"))
+E5.42 <- AddMetaData      (E5.42, metadata = "IVF",          col.name = "Model"    )
+E5.42 <- AddMetaData      (E5.42, metadata = "Blastocyst",   col.name = "Source"   )
+E5.42 <- AddMetaData      (E5.42, metadata = "E5.42",        col.name = "ID"       )
+E5.42 <- AddMetaData      (E5.42, metadata = "P_E5.42",      col.name = "rawID"    )
+E5.42 <- AddMetaData      (E5.42, metadata = "E5",           col.name = "rawGA"    )
+E5.42 <- AddMetaData      (E5.42, metadata = "E5",           col.name = "GA"       )
+E5.42 <- AddMetaData      (E5.42, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.42 <- AddMetaData      (E5.42, metadata = "IVF",          col.name = "Type"     )
+E5.42 <- AddMetaData      (E5.42, metadata = "SS2",          col.name = "Gate"     )
+E5.42 <- AddMetaData      (E5.42, metadata = "IVF",          col.name = "Trimester")
+E5.42 <- AddMetaData      (E5.42, metadata = "6",            col.name = "Batch"    )
+E5.42 <- CellCycleScoring (E5.42, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.43 <- subset           (petropoulos, idents = c("E5.43"))
+E5.43 <- AddMetaData      (E5.43, metadata = "IVF",          col.name = "Model"    )
+E5.43 <- AddMetaData      (E5.43, metadata = "Blastocyst",   col.name = "Source"   )
+E5.43 <- AddMetaData      (E5.43, metadata = "E5.43",        col.name = "ID"       )
+E5.43 <- AddMetaData      (E5.43, metadata = "P_E5.43",      col.name = "rawID"    )
+E5.43 <- AddMetaData      (E5.43, metadata = "E5",           col.name = "rawGA"    )
+E5.43 <- AddMetaData      (E5.43, metadata = "E5",           col.name = "GA"       )
+E5.43 <- AddMetaData      (E5.43, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.43 <- AddMetaData      (E5.43, metadata = "IVF",          col.name = "Type"     )
+E5.43 <- AddMetaData      (E5.43, metadata = "SS2",          col.name = "Gate"     )
+E5.43 <- AddMetaData      (E5.43, metadata = "IVF",          col.name = "Trimester")
+E5.43 <- AddMetaData      (E5.43, metadata = "6",            col.name = "Batch"    )
+E5.43 <- CellCycleScoring (E5.43, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.5 <- subset           (petropoulos, idents = c("E5.5"))
+E5.5 <- AddMetaData      (E5.5, metadata = "IVF",          col.name = "Model"    )
+E5.5 <- AddMetaData      (E5.5, metadata = "Blastocyst",   col.name = "Source"   )
+E5.5 <- AddMetaData      (E5.5, metadata = "E5.5",         col.name = "ID"       )
+E5.5 <- AddMetaData      (E5.5, metadata = "P_E5.5",       col.name = "rawID"    )
+E5.5 <- AddMetaData      (E5.5, metadata = "E5",           col.name = "rawGA"    )
+E5.5 <- AddMetaData      (E5.5, metadata = "E5",           col.name = "GA"       )
+E5.5 <- AddMetaData      (E5.5, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.5 <- AddMetaData      (E5.5, metadata = "IVF",          col.name = "Type"     )
+E5.5 <- AddMetaData      (E5.5, metadata = "SS2",          col.name = "Gate"     )
+E5.5 <- AddMetaData      (E5.5, metadata = "IVF",          col.name = "Trimester")
+E5.5 <- AddMetaData      (E5.5, metadata = "6",            col.name = "Batch"    )
+E5.5 <- CellCycleScoring (E5.5, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.6 <- subset           (petropoulos, idents = c("E5.6"))
+E5.6 <- AddMetaData      (E5.6, metadata = "IVF",          col.name = "Model"    )
+E5.6 <- AddMetaData      (E5.6, metadata = "Blastocyst",   col.name = "Source"   )
+E5.6 <- AddMetaData      (E5.6, metadata = "E5.6",         col.name = "ID"       )
+E5.6 <- AddMetaData      (E5.6, metadata = "P_E5.6",       col.name = "rawID"    )
+E5.6 <- AddMetaData      (E5.6, metadata = "E5",           col.name = "rawGA"    )
+E5.6 <- AddMetaData      (E5.6, metadata = "E5",           col.name = "GA"       )
+E5.6 <- AddMetaData      (E5.6, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.6 <- AddMetaData      (E5.6, metadata = "IVF",          col.name = "Type"     )
+E5.6 <- AddMetaData      (E5.6, metadata = "SS2",          col.name = "Gate"     )
+E5.6 <- AddMetaData      (E5.6, metadata = "IVF",          col.name = "Trimester")
+E5.6 <- AddMetaData      (E5.6, metadata = "6",            col.name = "Batch"    )
+E5.6 <- CellCycleScoring (E5.6, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.7 <- subset           (petropoulos, idents = c("E5.7"))
+E5.7 <- AddMetaData      (E5.7, metadata = "IVF",          col.name = "Model"    )
+E5.7 <- AddMetaData      (E5.7, metadata = "Blastocyst",   col.name = "Source"   )
+E5.7 <- AddMetaData      (E5.7, metadata = "E5.7",         col.name = "ID"       )
+E5.7 <- AddMetaData      (E5.7, metadata = "P_E5.7",       col.name = "rawID"    )
+E5.7 <- AddMetaData      (E5.7, metadata = "E5",           col.name = "rawGA"    )
+E5.7 <- AddMetaData      (E5.7, metadata = "E5",           col.name = "GA"       )
+E5.7 <- AddMetaData      (E5.7, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.7 <- AddMetaData      (E5.7, metadata = "IVF",          col.name = "Type"     )
+E5.7 <- AddMetaData      (E5.7, metadata = "SS2",          col.name = "Gate"     )
+E5.7 <- AddMetaData      (E5.7, metadata = "IVF",          col.name = "Trimester")
+E5.7 <- AddMetaData      (E5.7, metadata = "6",            col.name = "Batch"    )
+E5.7 <- CellCycleScoring (E5.7, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.8 <- subset           (petropoulos, idents = c("E5.8"))
+E5.8 <- AddMetaData      (E5.8, metadata = "IVF",          col.name = "Model"    )
+E5.8 <- AddMetaData      (E5.8, metadata = "Blastocyst",   col.name = "Source"   )
+E5.8 <- AddMetaData      (E5.8, metadata = "E5.8",         col.name = "ID"       )
+E5.8 <- AddMetaData      (E5.8, metadata = "P_E5.8",       col.name = "rawID"    )
+E5.8 <- AddMetaData      (E5.8, metadata = "E5",           col.name = "rawGA"    )
+E5.8 <- AddMetaData      (E5.8, metadata = "E5",           col.name = "GA"       )
+E5.8 <- AddMetaData      (E5.8, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.8 <- AddMetaData      (E5.8, metadata = "IVF",          col.name = "Type"     )
+E5.8 <- AddMetaData      (E5.8, metadata = "SS2",          col.name = "Gate"     )
+E5.8 <- AddMetaData      (E5.8, metadata = "IVF",          col.name = "Trimester")
+E5.8 <- AddMetaData      (E5.8, metadata = "6",            col.name = "Batch"    )
+E5.8 <- CellCycleScoring (E5.8, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5.9 <- subset           (petropoulos, idents = c("E5.9"))
+E5.9 <- AddMetaData      (E5.9, metadata = "IVF",          col.name = "Model"    )
+E5.9 <- AddMetaData      (E5.9, metadata = "Blastocyst",   col.name = "Source"   )
+E5.9 <- AddMetaData      (E5.9, metadata = "E5.9",         col.name = "ID"       )
+E5.9 <- AddMetaData      (E5.9, metadata = "P_E5.9",       col.name = "rawID"    )
+E5.9 <- AddMetaData      (E5.9, metadata = "E5",           col.name = "rawGA"    )
+E5.9 <- AddMetaData      (E5.9, metadata = "E5",           col.name = "GA"       )
+E5.9 <- AddMetaData      (E5.9, metadata = "Blastocyst",   col.name = "Tissue"   )
+E5.9 <- AddMetaData      (E5.9, metadata = "IVF",          col.name = "Type"     )
+E5.9 <- AddMetaData      (E5.9, metadata = "SS2",          col.name = "Gate"     )
+E5.9 <- AddMetaData      (E5.9, metadata = "IVF",          col.name = "Trimester")
+E5.9 <- AddMetaData      (E5.9, metadata = "6",            col.name = "Batch"    )
+E5.9 <- CellCycleScoring (E5.9, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E5 <- merge (E5.early.31, y = c(E5.early.36,
+                                E5.1,
+                                E5.10,
+                                E5.11,
+                                E5.12,
+                                E5.13,
+                                E5.14,
+                                E5.15,
+                                E5.16,
+                                E5.2,
+                                E5.3,
+                                E5.37,
+                                E5.38,
+                                E5.3940,
+                                E5.41,
+                                E5.42,
+                                E5.43,
+                                E5.5,
+                                E5.6,
+                                E5.7,
+                                E5.8,
+                                E5.9), project = "10X_E5")
+
+E5 <- NormalizeData        (E5)
+E5 <- ScaleData            (E5)
+E5 <- FindVariableFeatures (E5, selection.method = "vst", nfeatures = 2000)
+E5 <- RunPCA               (E5)
+E5 <- RunUMAP              (E5, dims = 1:50)
+
+rm (E5.early.31,
+    E5.early.36,
+    E5.1,
+    E5.10,
+    E5.11,
+    E5.12,
+    E5.13,
+    E5.14,
+    E5.15,
+    E5.16,
+    E5.2,
+    E5.3,
+    E5.37,
+    E5.38,
+    E5.3940,
+    E5.41,
+    E5.42,
+    E5.43,
+    E5.5,
+    E5.6,
+    E5.7,
+    E5.8,
+    E5.9)
+```
+
+```{r}
+E6.1 <- subset           (petropoulos, idents = c("E6.1"))
+E6.1 <- AddMetaData      (E6.1, metadata = "IVF",           col.name = "Model"    )
+E6.1 <- AddMetaData      (E6.1, metadata = "Blastocyst",    col.name = "Source"   )
+E6.1 <- AddMetaData      (E6.1, metadata = "E6.1",          col.name = "ID"       )
+E6.1 <- AddMetaData      (E6.1, metadata = "P_E6.1",        col.name = "rawID"    )
+E6.1 <- AddMetaData      (E6.1, metadata = "E6",            col.name = "rawGA"    )
+E6.1 <- AddMetaData      (E6.1, metadata = "E6",            col.name = "GA"       )
+E6.1 <- AddMetaData      (E6.1, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.1 <- AddMetaData      (E6.1, metadata = "IVF",           col.name = "Type"     )
+E6.1 <- AddMetaData      (E6.1, metadata = "SS2",           col.name = "Gate"     )
+E6.1 <- AddMetaData      (E6.1, metadata = "IVF",           col.name = "Trimester")
+E6.1 <- AddMetaData      (E6.1, metadata = "6",             col.name = "Batch"    )
+E6.1 <- CellCycleScoring (E6.1, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.10 <- subset           (petropoulos, idents = c("E6.10"))
+E6.10 <- AddMetaData      (E6.10, metadata = "IVF",           col.name = "Model"    )
+E6.10 <- AddMetaData      (E6.10, metadata = "Blastocyst",    col.name = "Source"   )
+E6.10 <- AddMetaData      (E6.10, metadata = "E6.10",         col.name = "ID"       )
+E6.10 <- AddMetaData      (E6.10, metadata = "P_E6.10",       col.name = "rawID"    )
+E6.10 <- AddMetaData      (E6.10, metadata = "E6",            col.name = "rawGA"    )
+E6.10 <- AddMetaData      (E6.10, metadata = "E6",            col.name = "GA"       )
+E6.10 <- AddMetaData      (E6.10, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.10 <- AddMetaData      (E6.10, metadata = "IVF",           col.name = "Type"     )
+E6.10 <- AddMetaData      (E6.10, metadata = "SS2",           col.name = "Gate"     )
+E6.10 <- AddMetaData      (E6.10, metadata = "IVF",           col.name = "Trimester")
+E6.10 <- AddMetaData      (E6.10, metadata = "6",             col.name = "Batch"    )
+E6.10 <- CellCycleScoring (E6.10, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.11 <- subset           (petropoulos, idents = c("E6.11"))
+E6.11 <- AddMetaData      (E6.11, metadata = "IVF",           col.name = "Model"    )
+E6.11 <- AddMetaData      (E6.11, metadata = "Blastocyst",    col.name = "Source"   )
+E6.11 <- AddMetaData      (E6.11, metadata = "E6.11",         col.name = "ID"       )
+E6.11 <- AddMetaData      (E6.11, metadata = "P_E6.11",       col.name = "rawID"    )
+E6.11 <- AddMetaData      (E6.11, metadata = "E6",            col.name = "rawGA"    )
+E6.11 <- AddMetaData      (E6.11, metadata = "E6",            col.name = "GA"       )
+E6.11 <- AddMetaData      (E6.11, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.11 <- AddMetaData      (E6.11, metadata = "IVF",           col.name = "Type"     )
+E6.11 <- AddMetaData      (E6.11, metadata = "SS2",           col.name = "Gate"     )
+E6.11 <- AddMetaData      (E6.11, metadata = "IVF",           col.name = "Trimester")
+E6.11 <- AddMetaData      (E6.11, metadata = "6",             col.name = "Batch"    )
+E6.11 <- CellCycleScoring (E6.11, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.12 <- subset           (petropoulos, idents = c("E6.12"))
+E6.12 <- AddMetaData      (E6.12, metadata = "IVF",           col.name = "Model"    )
+E6.12 <- AddMetaData      (E6.12, metadata = "Blastocyst",    col.name = "Source"   )
+E6.12 <- AddMetaData      (E6.12, metadata = "E6.12",         col.name = "ID"       )
+E6.12 <- AddMetaData      (E6.12, metadata = "P_E6.12",       col.name = "rawID"    )
+E6.12 <- AddMetaData      (E6.12, metadata = "E6",            col.name = "rawGA"    )
+E6.12 <- AddMetaData      (E6.12, metadata = "E6",            col.name = "GA"       )
+E6.12 <- AddMetaData      (E6.12, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.12 <- AddMetaData      (E6.12, metadata = "IVF",           col.name = "Type"     )
+E6.12 <- AddMetaData      (E6.12, metadata = "SS2",           col.name = "Gate"     )
+E6.12 <- AddMetaData      (E6.12, metadata = "IVF",           col.name = "Trimester")
+E6.12 <- AddMetaData      (E6.12, metadata = "6",             col.name = "Batch"    )
+E6.12 <- CellCycleScoring (E6.12, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.13 <- subset           (petropoulos, idents = c("E6.13"))
+E6.13 <- AddMetaData      (E6.13, metadata = "IVF",           col.name = "Model"    )
+E6.13 <- AddMetaData      (E6.13, metadata = "Blastocyst",    col.name = "Source"   )
+E6.13 <- AddMetaData      (E6.13, metadata = "E6.13",         col.name = "ID"       )
+E6.13 <- AddMetaData      (E6.13, metadata = "P_E6.13",       col.name = "rawID"    )
+E6.13 <- AddMetaData      (E6.13, metadata = "E6",            col.name = "rawGA"    )
+E6.13 <- AddMetaData      (E6.13, metadata = "E6",            col.name = "GA"       )
+E6.13 <- AddMetaData      (E6.13, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.13 <- AddMetaData      (E6.13, metadata = "IVF",           col.name = "Type"     )
+E6.13 <- AddMetaData      (E6.13, metadata = "SS2",           col.name = "Gate"     )
+E6.13 <- AddMetaData      (E6.13, metadata = "IVF",           col.name = "Trimester")
+E6.13 <- AddMetaData      (E6.13, metadata = "6",             col.name = "Batch"    )
+E6.13 <- CellCycleScoring (E6.13, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.14 <- subset           (petropoulos, idents = c("E6.14"))
+E6.14 <- AddMetaData      (E6.14, metadata = "IVF",           col.name = "Model"    )
+E6.14 <- AddMetaData      (E6.14, metadata = "Blastocyst",    col.name = "Source"   )
+E6.14 <- AddMetaData      (E6.14, metadata = "E6.14",         col.name = "ID"       )
+E6.14 <- AddMetaData      (E6.14, metadata = "P_E6.14",       col.name = "rawID"    )
+E6.14 <- AddMetaData      (E6.14, metadata = "E6",            col.name = "rawGA"    )
+E6.14 <- AddMetaData      (E6.14, metadata = "E6",            col.name = "GA"       )
+E6.14 <- AddMetaData      (E6.14, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.14 <- AddMetaData      (E6.14, metadata = "IVF",           col.name = "Type"     )
+E6.14 <- AddMetaData      (E6.14, metadata = "SS2",           col.name = "Gate"     )
+E6.14 <- AddMetaData      (E6.14, metadata = "IVF",           col.name = "Trimester")
+E6.14 <- AddMetaData      (E6.14, metadata = "6",             col.name = "Batch"    )
+E6.14 <- CellCycleScoring (E6.14, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.15 <- subset           (petropoulos, idents = c("E6.15"))
+E6.15 <- AddMetaData      (E6.15, metadata = "IVF",           col.name = "Model"    )
+E6.15 <- AddMetaData      (E6.15, metadata = "Blastocyst",    col.name = "Source"   )
+E6.15 <- AddMetaData      (E6.15, metadata = "E6.15",         col.name = "ID"       )
+E6.15 <- AddMetaData      (E6.15, metadata = "P_E6.15",       col.name = "rawID"    )
+E6.15 <- AddMetaData      (E6.15, metadata = "E6",            col.name = "rawGA"    )
+E6.15 <- AddMetaData      (E6.15, metadata = "E6",            col.name = "GA"       )
+E6.15 <- AddMetaData      (E6.15, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.15 <- AddMetaData      (E6.15, metadata = "IVF",           col.name = "Type"     )
+E6.15 <- AddMetaData      (E6.15, metadata = "SS2",           col.name = "Gate"     )
+E6.15 <- AddMetaData      (E6.15, metadata = "IVF",           col.name = "Trimester")
+E6.15 <- AddMetaData      (E6.15, metadata = "6",             col.name = "Batch"    )
+E6.15 <- CellCycleScoring (E6.15, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.16 <- subset           (petropoulos, idents = c("E6.16"))
+E6.16 <- AddMetaData      (E6.16, metadata = "IVF",           col.name = "Model"    )
+E6.16 <- AddMetaData      (E6.16, metadata = "Blastocyst",    col.name = "Source"   )
+E6.16 <- AddMetaData      (E6.16, metadata = "E6.16",         col.name = "ID"       )
+E6.16 <- AddMetaData      (E6.16, metadata = "P_E6.16",       col.name = "rawID"    )
+E6.16 <- AddMetaData      (E6.16, metadata = "E6",            col.name = "rawGA"    )
+E6.16 <- AddMetaData      (E6.16, metadata = "E6",            col.name = "GA"       )
+E6.16 <- AddMetaData      (E6.16, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.16 <- AddMetaData      (E6.16, metadata = "IVF",           col.name = "Type"     )
+E6.16 <- AddMetaData      (E6.16, metadata = "SS2",           col.name = "Gate"     )
+E6.16 <- AddMetaData      (E6.16, metadata = "IVF",           col.name = "Trimester")
+E6.16 <- AddMetaData      (E6.16, metadata = "6",             col.name = "Batch"    )
+E6.16 <- CellCycleScoring (E6.16, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.17 <- subset           (petropoulos, idents = c("E6.17"))
+E6.17 <- AddMetaData      (E6.17, metadata = "IVF",           col.name = "Model"    )
+E6.17 <- AddMetaData      (E6.17, metadata = "Blastocyst",    col.name = "Source"   )
+E6.17 <- AddMetaData      (E6.17, metadata = "E6.17",         col.name = "ID"       )
+E6.17 <- AddMetaData      (E6.17, metadata = "P_E6.17",       col.name = "rawID"    )
+E6.17 <- AddMetaData      (E6.17, metadata = "E6",            col.name = "rawGA"    )
+E6.17 <- AddMetaData      (E6.17, metadata = "E6",            col.name = "GA"       )
+E6.17 <- AddMetaData      (E6.17, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.17 <- AddMetaData      (E6.17, metadata = "IVF",           col.name = "Type"     )
+E6.17 <- AddMetaData      (E6.17, metadata = "SS2",           col.name = "Gate"     )
+E6.17 <- AddMetaData      (E6.17, metadata = "IVF",           col.name = "Trimester")
+E6.17 <- AddMetaData      (E6.17, metadata = "6",             col.name = "Batch"    )
+E6.17 <- CellCycleScoring (E6.17, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.18 <- subset           (petropoulos, idents = c("E6.18"))
+E6.18 <- AddMetaData      (E6.18, metadata = "IVF",           col.name = "Model"    )
+E6.18 <- AddMetaData      (E6.18, metadata = "Blastocyst",    col.name = "Source"   )
+E6.18 <- AddMetaData      (E6.18, metadata = "E6.18",         col.name = "ID"       )
+E6.18 <- AddMetaData      (E6.18, metadata = "P_E6.18",       col.name = "rawID"    )
+E6.18 <- AddMetaData      (E6.18, metadata = "E6",            col.name = "rawGA"    )
+E6.18 <- AddMetaData      (E6.18, metadata = "E6",            col.name = "GA"       )
+E6.18 <- AddMetaData      (E6.18, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.18 <- AddMetaData      (E6.18, metadata = "IVF",           col.name = "Type"     )
+E6.18 <- AddMetaData      (E6.18, metadata = "SS2",           col.name = "Gate"     )
+E6.18 <- AddMetaData      (E6.18, metadata = "IVF",           col.name = "Trimester")
+E6.18 <- AddMetaData      (E6.18, metadata = "6",             col.name = "Batch"    )
+E6.18 <- CellCycleScoring (E6.18, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.2 <- subset           (petropoulos, idents = c("E6.2"))
+E6.2 <- AddMetaData      (E6.2, metadata = "IVF",           col.name = "Model"    )
+E6.2 <- AddMetaData      (E6.2, metadata = "Blastocyst",    col.name = "Source"   )
+E6.2 <- AddMetaData      (E6.2, metadata = "E6.2",          col.name = "ID"       )
+E6.2 <- AddMetaData      (E6.2, metadata = "P_E6.2",        col.name = "rawID"    )
+E6.2 <- AddMetaData      (E6.2, metadata = "E6",            col.name = "rawGA"    )
+E6.2 <- AddMetaData      (E6.2, metadata = "E6",            col.name = "GA"       )
+E6.2 <- AddMetaData      (E6.2, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.2 <- AddMetaData      (E6.2, metadata = "IVF",           col.name = "Type"     )
+E6.2 <- AddMetaData      (E6.2, metadata = "SS2",           col.name = "Gate"     )
+E6.2 <- AddMetaData      (E6.2, metadata = "IVF",           col.name = "Trimester")
+E6.2 <- AddMetaData      (E6.2, metadata = "6",             col.name = "Batch"    )
+E6.2 <- CellCycleScoring (E6.2, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.22 <- subset           (petropoulos, idents = c("E6.22"))
+E6.22 <- AddMetaData      (E6.22, metadata = "IVF",           col.name = "Model"    )
+E6.22 <- AddMetaData      (E6.22, metadata = "Blastocyst",    col.name = "Source"   )
+E6.22 <- AddMetaData      (E6.22, metadata = "E6.22",         col.name = "ID"       )
+E6.22 <- AddMetaData      (E6.22, metadata = "P_E6.22",       col.name = "rawID"    )
+E6.22 <- AddMetaData      (E6.22, metadata = "E6",            col.name = "rawGA"    )
+E6.22 <- AddMetaData      (E6.22, metadata = "E6",            col.name = "GA"       )
+E6.22 <- AddMetaData      (E6.22, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.22 <- AddMetaData      (E6.22, metadata = "IVF",           col.name = "Type"     )
+E6.22 <- AddMetaData      (E6.22, metadata = "SS2",           col.name = "Gate"     )
+E6.22 <- AddMetaData      (E6.22, metadata = "IVF",           col.name = "Trimester")
+E6.22 <- AddMetaData      (E6.22, metadata = "6",             col.name = "Batch"    )
+E6.22 <- CellCycleScoring (E6.22, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.3 <- subset           (petropoulos, idents = c("E6.3"))
+E6.3 <- AddMetaData      (E6.3, metadata = "IVF",           col.name = "Model"    )
+E6.3 <- AddMetaData      (E6.3, metadata = "Blastocyst",    col.name = "Source"   )
+E6.3 <- AddMetaData      (E6.3, metadata = "E6.3",          col.name = "ID"       )
+E6.3 <- AddMetaData      (E6.3, metadata = "P_E6.3",        col.name = "rawID"    )
+E6.3 <- AddMetaData      (E6.3, metadata = "E6",            col.name = "rawGA"    )
+E6.3 <- AddMetaData      (E6.3, metadata = "E6",            col.name = "GA"       )
+E6.3 <- AddMetaData      (E6.3, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.3 <- AddMetaData      (E6.3, metadata = "IVF",           col.name = "Type"     )
+E6.3 <- AddMetaData      (E6.3, metadata = "SS2",           col.name = "Gate"     )
+E6.3 <- AddMetaData      (E6.3, metadata = "IVF",           col.name = "Trimester")
+E6.3 <- AddMetaData      (E6.3, metadata = "6",             col.name = "Batch"    )
+E6.3 <- CellCycleScoring (E6.3, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.4 <- subset           (petropoulos, idents = c("E6.4"))
+E6.4 <- AddMetaData      (E6.4, metadata = "IVF",           col.name = "Model"    )
+E6.4 <- AddMetaData      (E6.4, metadata = "Blastocyst",    col.name = "Source"   )
+E6.4 <- AddMetaData      (E6.4, metadata = "E6.4",          col.name = "ID"       )
+E6.4 <- AddMetaData      (E6.4, metadata = "P_E6.4",        col.name = "rawID"    )
+E6.4 <- AddMetaData      (E6.4, metadata = "E6",            col.name = "rawGA"    )
+E6.4 <- AddMetaData      (E6.4, metadata = "E6",            col.name = "GA"       )
+E6.4 <- AddMetaData      (E6.4, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.4 <- AddMetaData      (E6.4, metadata = "IVF",           col.name = "Type"     )
+E6.4 <- AddMetaData      (E6.4, metadata = "SS2",           col.name = "Gate"     )
+E6.4 <- AddMetaData      (E6.4, metadata = "IVF",           col.name = "Trimester")
+E6.4 <- AddMetaData      (E6.4, metadata = "6",             col.name = "Batch"    )
+E6.4 <- CellCycleScoring (E6.4, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.6 <- subset           (petropoulos, idents = c("E6.6"))
+E6.6 <- AddMetaData      (E6.6, metadata = "IVF",           col.name = "Model"    )
+E6.6 <- AddMetaData      (E6.6, metadata = "Blastocyst",    col.name = "Source"   )
+E6.6 <- AddMetaData      (E6.6, metadata = "E6.6",          col.name = "ID"       )
+E6.6 <- AddMetaData      (E6.6, metadata = "P_E6.6",        col.name = "rawID"    )
+E6.6 <- AddMetaData      (E6.6, metadata = "E6",            col.name = "rawGA"    )
+E6.6 <- AddMetaData      (E6.6, metadata = "E6",            col.name = "GA"       )
+E6.6 <- AddMetaData      (E6.6, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.6 <- AddMetaData      (E6.6, metadata = "IVF",           col.name = "Type"     )
+E6.6 <- AddMetaData      (E6.6, metadata = "SS2",           col.name = "Gate"     )
+E6.6 <- AddMetaData      (E6.6, metadata = "IVF",           col.name = "Trimester")
+E6.6 <- AddMetaData      (E6.6, metadata = "6",             col.name = "Batch"    )
+E6.6 <- CellCycleScoring (E6.6, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.7 <- subset           (petropoulos, idents = c("E6.7"))
+E6.7 <- AddMetaData      (E6.7, metadata = "IVF",           col.name = "Model"    )
+E6.7 <- AddMetaData      (E6.7, metadata = "Blastocyst",    col.name = "Source"   )
+E6.7 <- AddMetaData      (E6.7, metadata = "E6.7",          col.name = "ID"       )
+E6.7 <- AddMetaData      (E6.7, metadata = "P_E6.7",        col.name = "rawID"    )
+E6.7 <- AddMetaData      (E6.7, metadata = "E6",            col.name = "rawGA"    )
+E6.7 <- AddMetaData      (E6.7, metadata = "E6",            col.name = "GA"       )
+E6.7 <- AddMetaData      (E6.7, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.7 <- AddMetaData      (E6.7, metadata = "IVF",           col.name = "Type"     )
+E6.7 <- AddMetaData      (E6.7, metadata = "SS2",           col.name = "Gate"     )
+E6.7 <- AddMetaData      (E6.7, metadata = "IVF",           col.name = "Trimester")
+E6.7 <- AddMetaData      (E6.7, metadata = "6",             col.name = "Batch"    )
+E6.7 <- CellCycleScoring (E6.7, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.8 <- subset           (petropoulos, idents = c("E6.8"))
+E6.8 <- AddMetaData      (E6.8, metadata = "IVF",           col.name = "Model"    )
+E6.8 <- AddMetaData      (E6.8, metadata = "Blastocyst",    col.name = "Source"   )
+E6.8 <- AddMetaData      (E6.8, metadata = "E6.8",          col.name = "ID"       )
+E6.8 <- AddMetaData      (E6.8, metadata = "P_E6.8",        col.name = "rawID"    )
+E6.8 <- AddMetaData      (E6.8, metadata = "E6",            col.name = "rawGA"    )
+E6.8 <- AddMetaData      (E6.8, metadata = "E6",            col.name = "GA"       )
+E6.8 <- AddMetaData      (E6.8, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.8 <- AddMetaData      (E6.8, metadata = "IVF",           col.name = "Type"     )
+E6.8 <- AddMetaData      (E6.8, metadata = "SS2",           col.name = "Gate"     )
+E6.8 <- AddMetaData      (E6.8, metadata = "IVF",           col.name = "Trimester")
+E6.8 <- AddMetaData      (E6.8, metadata = "6",             col.name = "Batch"    )
+E6.8 <- CellCycleScoring (E6.8, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6.9 <- subset           (petropoulos, idents = c("E6.9"))
+E6.9 <- AddMetaData      (E6.9, metadata = "IVF",           col.name = "Model"    )
+E6.9 <- AddMetaData      (E6.9, metadata = "Blastocyst",    col.name = "Source"   )
+E6.9 <- AddMetaData      (E6.9, metadata = "E6.9",          col.name = "ID"       )
+E6.9 <- AddMetaData      (E6.9, metadata = "P_E6.9",        col.name = "rawID"    )
+E6.9 <- AddMetaData      (E6.9, metadata = "E6",            col.name = "rawGA"    )
+E6.9 <- AddMetaData      (E6.9, metadata = "E6",            col.name = "GA"       )
+E6.9 <- AddMetaData      (E6.9, metadata = "Blastocyst",    col.name = "Tissue"   )
+E6.9 <- AddMetaData      (E6.9, metadata = "IVF",           col.name = "Type"     )
+E6.9 <- AddMetaData      (E6.9, metadata = "SS2",           col.name = "Gate"     )
+E6.9 <- AddMetaData      (E6.9, metadata = "IVF",           col.name = "Trimester")
+E6.9 <- AddMetaData      (E6.9, metadata = "6",             col.name = "Batch"    )
+E6.9 <- CellCycleScoring (E6.9, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E6 <- merge (E6.1, y = c(E6.10,
+                         E6.11,
+                         E6.12,
+                         E6.13,
+                         E6.14,
+                         E6.15,
+                         E6.16,
+                         E6.17,
+                         E6.18,
+                         E6.2,
+                         E6.22,
+                         E6.3,
+                         E6.4,
+                         E6.6,
+                         E6.7,
+                         E6.8,
+                         E6.9), project = "10X_E6")
+
+E6 <- NormalizeData        (E6)
+E6 <- ScaleData            (E6)
+E6 <- FindVariableFeatures (E6, selection.method = "vst", nfeatures = 2000)
+E6 <- RunPCA               (E6)
+E6 <- RunUMAP              (E6, dims = 1:50)
+
+rm (E6.1,
+    E6.10,
+    E6.11,
+    E6.12,
+    E6.13,
+    E6.14,
+    E6.15,
+    E6.16,
+    E6.17,
+    E6.18,
+    E6.2,
+    E6.22,
+    E6.3,
+    E6.4,
+    E6.6,
+    E6.7,
+    E6.8,
+    E6.9)
+```
+
+```{r}
+E7.10 <- subset           (petropoulos, idents = c("E7.10"))
+E7.10 <- AddMetaData      (E7.10, metadata = "IVF",           col.name = "Model"    )
+E7.10 <- AddMetaData      (E7.10, metadata = "Blastocyst",    col.name = "Source"   )
+E7.10 <- AddMetaData      (E7.10, metadata = "E7.10",         col.name = "ID"       )
+E7.10 <- AddMetaData      (E7.10, metadata = "P_E7.10",       col.name = "rawID"    )
+E7.10 <- AddMetaData      (E7.10, metadata = "E7",            col.name = "rawGA"    )
+E7.10 <- AddMetaData      (E7.10, metadata = "E7",            col.name = "GA"       )
+E7.10 <- AddMetaData      (E7.10, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.10 <- AddMetaData      (E7.10, metadata = "IVF",           col.name = "Type"     )
+E7.10 <- AddMetaData      (E7.10, metadata = "SS2",           col.name = "Gate"     )
+E7.10 <- AddMetaData      (E7.10, metadata = "IVF",           col.name = "Trimester")
+E7.10 <- AddMetaData      (E7.10, metadata = "6",             col.name = "Batch"    )
+E7.10 <- CellCycleScoring (E7.10, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.11 <- subset           (petropoulos, idents = c("E7.11"))
+E7.11 <- AddMetaData      (E7.11, metadata = "IVF",           col.name = "Model"    )
+E7.11 <- AddMetaData      (E7.11, metadata = "Blastocyst",    col.name = "Source"   )
+E7.11 <- AddMetaData      (E7.11, metadata = "E7.11",         col.name = "ID"       )
+E7.11 <- AddMetaData      (E7.11, metadata = "P_E7.11",       col.name = "rawID"    )
+E7.11 <- AddMetaData      (E7.11, metadata = "E7",            col.name = "rawGA"    )
+E7.11 <- AddMetaData      (E7.11, metadata = "E7",            col.name = "GA"       )
+E7.11 <- AddMetaData      (E7.11, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.11 <- AddMetaData      (E7.11, metadata = "IVF",           col.name = "Type"     )
+E7.11 <- AddMetaData      (E7.11, metadata = "SS2",           col.name = "Gate"     )
+E7.11 <- AddMetaData      (E7.11, metadata = "IVF",           col.name = "Trimester")
+E7.11 <- AddMetaData      (E7.11, metadata = "6",             col.name = "Batch"    )
+E7.11 <- CellCycleScoring (E7.11, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.12 <- subset           (petropoulos, idents = c("E7.12"))
+E7.12 <- AddMetaData      (E7.12, metadata = "IVF",           col.name = "Model"    )
+E7.12 <- AddMetaData      (E7.12, metadata = "Blastocyst",    col.name = "Source"   )
+E7.12 <- AddMetaData      (E7.12, metadata = "E7.12",         col.name = "ID"       )
+E7.12 <- AddMetaData      (E7.12, metadata = "P_E7.12",       col.name = "rawID"    )
+E7.12 <- AddMetaData      (E7.12, metadata = "E7",            col.name = "rawGA"    )
+E7.12 <- AddMetaData      (E7.12, metadata = "E7",            col.name = "GA"       )
+E7.12 <- AddMetaData      (E7.12, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.12 <- AddMetaData      (E7.12, metadata = "IVF",           col.name = "Type"     )
+E7.12 <- AddMetaData      (E7.12, metadata = "SS2",           col.name = "Gate"     )
+E7.12 <- AddMetaData      (E7.12, metadata = "IVF",           col.name = "Trimester")
+E7.12 <- AddMetaData      (E7.12, metadata = "6",             col.name = "Batch"    )
+E7.12 <- CellCycleScoring (E7.12, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.13 <- subset           (petropoulos, idents = c("E7.13"))
+E7.13 <- AddMetaData      (E7.13, metadata = "IVF",           col.name = "Model"    )
+E7.13 <- AddMetaData      (E7.13, metadata = "Blastocyst",    col.name = "Source"   )
+E7.13 <- AddMetaData      (E7.13, metadata = "E7.13",         col.name = "ID"       )
+E7.13 <- AddMetaData      (E7.13, metadata = "P_E7.13",       col.name = "rawID"    )
+E7.13 <- AddMetaData      (E7.13, metadata = "E7",            col.name = "rawGA"    )
+E7.13 <- AddMetaData      (E7.13, metadata = "E7",            col.name = "GA"       )
+E7.13 <- AddMetaData      (E7.13, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.13 <- AddMetaData      (E7.13, metadata = "IVF",           col.name = "Type"     )
+E7.13 <- AddMetaData      (E7.13, metadata = "SS2",           col.name = "Gate"     )
+E7.13 <- AddMetaData      (E7.13, metadata = "IVF",           col.name = "Trimester")
+E7.13 <- AddMetaData      (E7.13, metadata = "6",             col.name = "Batch"    )
+E7.13 <- CellCycleScoring (E7.13, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.14 <- subset           (petropoulos, idents = c("E7.14"))
+E7.14 <- AddMetaData      (E7.14, metadata = "IVF",           col.name = "Model"    )
+E7.14 <- AddMetaData      (E7.14, metadata = "Blastocyst",    col.name = "Source"   )
+E7.14 <- AddMetaData      (E7.14, metadata = "E7.14",         col.name = "ID"       )
+E7.14 <- AddMetaData      (E7.14, metadata = "P_E7.14",       col.name = "rawID"    )
+E7.14 <- AddMetaData      (E7.14, metadata = "E7",            col.name = "rawGA"    )
+E7.14 <- AddMetaData      (E7.14, metadata = "E7",            col.name = "GA"       )
+E7.14 <- AddMetaData      (E7.14, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.14 <- AddMetaData      (E7.14, metadata = "IVF",           col.name = "Type"     )
+E7.14 <- AddMetaData      (E7.14, metadata = "SS2",           col.name = "Gate"     )
+E7.14 <- AddMetaData      (E7.14, metadata = "IVF",           col.name = "Trimester")
+E7.14 <- AddMetaData      (E7.14, metadata = "6",             col.name = "Batch"    )
+E7.14 <- CellCycleScoring (E7.14, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.15 <- subset           (petropoulos, idents = c("E7.15"))
+E7.15 <- AddMetaData      (E7.15, metadata = "IVF",           col.name = "Model"    )
+E7.15 <- AddMetaData      (E7.15, metadata = "Blastocyst",    col.name = "Source"   )
+E7.15 <- AddMetaData      (E7.15, metadata = "E7.15",         col.name = "ID"       )
+E7.15 <- AddMetaData      (E7.15, metadata = "P_E7.15",       col.name = "rawID"    )
+E7.15 <- AddMetaData      (E7.15, metadata = "E7",            col.name = "rawGA"    )
+E7.15 <- AddMetaData      (E7.15, metadata = "E7",            col.name = "GA"       )
+E7.15 <- AddMetaData      (E7.15, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.15 <- AddMetaData      (E7.15, metadata = "IVF",           col.name = "Type"     )
+E7.15 <- AddMetaData      (E7.15, metadata = "SS2",           col.name = "Gate"     )
+E7.15 <- AddMetaData      (E7.15, metadata = "IVF",           col.name = "Trimester")
+E7.15 <- AddMetaData      (E7.15, metadata = "6",             col.name = "Batch"    )
+E7.15 <- CellCycleScoring (E7.15, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.16 <- subset           (petropoulos, idents = c("E7.16"))
+E7.16 <- AddMetaData      (E7.16, metadata = "IVF",           col.name = "Model"    )
+E7.16 <- AddMetaData      (E7.16, metadata = "Blastocyst",    col.name = "Source"   )
+E7.16 <- AddMetaData      (E7.16, metadata = "E7.16",         col.name = "ID"       )
+E7.16 <- AddMetaData      (E7.16, metadata = "P_E7.16",       col.name = "rawID"    )
+E7.16 <- AddMetaData      (E7.16, metadata = "E7",            col.name = "rawGA"    )
+E7.16 <- AddMetaData      (E7.16, metadata = "E7",            col.name = "GA"       )
+E7.16 <- AddMetaData      (E7.16, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.16 <- AddMetaData      (E7.16, metadata = "IVF",           col.name = "Type"     )
+E7.16 <- AddMetaData      (E7.16, metadata = "SS2",           col.name = "Gate"     )
+E7.16 <- AddMetaData      (E7.16, metadata = "IVF",           col.name = "Trimester")
+E7.16 <- AddMetaData      (E7.16, metadata = "6",             col.name = "Batch"    )
+E7.16 <- CellCycleScoring (E7.16, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.17 <- subset           (petropoulos, idents = c("E7.17"))
+E7.17 <- AddMetaData      (E7.17, metadata = "IVF",           col.name = "Model"    )
+E7.17 <- AddMetaData      (E7.17, metadata = "Blastocyst",    col.name = "Source"   )
+E7.17 <- AddMetaData      (E7.17, metadata = "E7.17",         col.name = "ID"       )
+E7.17 <- AddMetaData      (E7.17, metadata = "P_E7.17",       col.name = "rawID"    )
+E7.17 <- AddMetaData      (E7.17, metadata = "E7",            col.name = "rawGA"    )
+E7.17 <- AddMetaData      (E7.17, metadata = "E7",            col.name = "GA"       )
+E7.17 <- AddMetaData      (E7.17, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.17 <- AddMetaData      (E7.17, metadata = "IVF",           col.name = "Type"     )
+E7.17 <- AddMetaData      (E7.17, metadata = "SS2",           col.name = "Gate"     )
+E7.17 <- AddMetaData      (E7.17, metadata = "IVF",           col.name = "Trimester")
+E7.17 <- AddMetaData      (E7.17, metadata = "6",             col.name = "Batch"    )
+E7.17 <- CellCycleScoring (E7.17, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.19 <- subset           (petropoulos, idents = c("E7.19"))
+E7.19 <- AddMetaData      (E7.19, metadata = "IVF",           col.name = "Model"    )
+E7.19 <- AddMetaData      (E7.19, metadata = "Blastocyst",    col.name = "Source"   )
+E7.19 <- AddMetaData      (E7.19, metadata = "E7.19",         col.name = "ID"       )
+E7.19 <- AddMetaData      (E7.19, metadata = "P_E7.19",       col.name = "rawID"    )
+E7.19 <- AddMetaData      (E7.19, metadata = "E7",            col.name = "rawGA"    )
+E7.19 <- AddMetaData      (E7.19, metadata = "E7",            col.name = "GA"       )
+E7.19 <- AddMetaData      (E7.19, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.19 <- AddMetaData      (E7.19, metadata = "IVF",           col.name = "Type"     )
+E7.19 <- AddMetaData      (E7.19, metadata = "SS2",           col.name = "Gate"     )
+E7.19 <- AddMetaData      (E7.19, metadata = "IVF",           col.name = "Trimester")
+E7.19 <- AddMetaData      (E7.19, metadata = "6",             col.name = "Batch"    )
+E7.19 <- CellCycleScoring (E7.19, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.2 <- subset           (petropoulos, idents = c("E7.2"))
+E7.2 <- AddMetaData      (E7.2, metadata = "IVF",           col.name = "Model"    )
+E7.2 <- AddMetaData      (E7.2, metadata = "Blastocyst",    col.name = "Source"   )
+E7.2 <- AddMetaData      (E7.2, metadata = "E7.2",          col.name = "ID"       )
+E7.2 <- AddMetaData      (E7.2, metadata = "P_E7.2",        col.name = "rawID"    )
+E7.2 <- AddMetaData      (E7.2, metadata = "E7",            col.name = "rawGA"    )
+E7.2 <- AddMetaData      (E7.2, metadata = "E7",            col.name = "GA"       )
+E7.2 <- AddMetaData      (E7.2, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.2 <- AddMetaData      (E7.2, metadata = "IVF",           col.name = "Type"     )
+E7.2 <- AddMetaData      (E7.2, metadata = "SS2",           col.name = "Gate"     )
+E7.2 <- AddMetaData      (E7.2, metadata = "IVF",           col.name = "Trimester")
+E7.2 <- AddMetaData      (E7.2, metadata = "6",             col.name = "Batch"    )
+E7.2 <- CellCycleScoring (E7.2, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.3 <- subset           (petropoulos, idents = c("E7.3"))
+E7.3 <- AddMetaData      (E7.3, metadata = "IVF",           col.name = "Model"    )
+E7.3 <- AddMetaData      (E7.3, metadata = "Blastocyst",    col.name = "Source"   )
+E7.3 <- AddMetaData      (E7.3, metadata = "E7.3",          col.name = "ID"       )
+E7.3 <- AddMetaData      (E7.3, metadata = "P_E7.3",        col.name = "rawID"    )
+E7.3 <- AddMetaData      (E7.3, metadata = "E7",            col.name = "rawGA"    )
+E7.3 <- AddMetaData      (E7.3, metadata = "E7",            col.name = "GA"       )
+E7.3 <- AddMetaData      (E7.3, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.3 <- AddMetaData      (E7.3, metadata = "IVF",           col.name = "Type"     )
+E7.3 <- AddMetaData      (E7.3, metadata = "SS2",           col.name = "Gate"     )
+E7.3 <- AddMetaData      (E7.3, metadata = "IVF",           col.name = "Trimester")
+E7.3 <- AddMetaData      (E7.3, metadata = "6",             col.name = "Batch"    )
+E7.3 <- CellCycleScoring (E7.3, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.4 <- subset           (petropoulos, idents = c("E7.4"))
+E7.4 <- AddMetaData      (E7.4, metadata = "IVF",           col.name = "Model"    )
+E7.4 <- AddMetaData      (E7.4, metadata = "Blastocyst",    col.name = "Source"   )
+E7.4 <- AddMetaData      (E7.4, metadata = "E7.4",          col.name = "ID"       )
+E7.4 <- AddMetaData      (E7.4, metadata = "P_E7.4",        col.name = "rawID"    )
+E7.4 <- AddMetaData      (E7.4, metadata = "E7",            col.name = "rawGA"    )
+E7.4 <- AddMetaData      (E7.4, metadata = "E7",            col.name = "GA"       )
+E7.4 <- AddMetaData      (E7.4, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.4 <- AddMetaData      (E7.4, metadata = "IVF",           col.name = "Type"     )
+E7.4 <- AddMetaData      (E7.4, metadata = "SS2",           col.name = "Gate"     )
+E7.4 <- AddMetaData      (E7.4, metadata = "IVF",           col.name = "Trimester")
+E7.4 <- AddMetaData      (E7.4, metadata = "6",             col.name = "Batch"    )
+E7.4 <- CellCycleScoring (E7.4, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.5 <- subset           (petropoulos, idents = c("E7.5"))
+E7.5 <- AddMetaData      (E7.5, metadata = "IVF",           col.name = "Model"    )
+E7.5 <- AddMetaData      (E7.5, metadata = "Blastocyst",    col.name = "Source"   )
+E7.5 <- AddMetaData      (E7.5, metadata = "E7.5",          col.name = "ID"       )
+E7.5 <- AddMetaData      (E7.5, metadata = "P_E7.5",        col.name = "rawID"    )
+E7.5 <- AddMetaData      (E7.5, metadata = "E7",            col.name = "rawGA"    )
+E7.5 <- AddMetaData      (E7.5, metadata = "E7",            col.name = "GA"       )
+E7.5 <- AddMetaData      (E7.5, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.5 <- AddMetaData      (E7.5, metadata = "IVF",           col.name = "Type"     )
+E7.5 <- AddMetaData      (E7.5, metadata = "SS2",           col.name = "Gate"     )
+E7.5 <- AddMetaData      (E7.5, metadata = "IVF",           col.name = "Trimester")
+E7.5 <- AddMetaData      (E7.5, metadata = "6",             col.name = "Batch"    )
+E7.5 <- CellCycleScoring (E7.5, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.6 <- subset           (petropoulos, idents = c("E7.6"))
+E7.6 <- AddMetaData      (E7.6, metadata = "IVF",           col.name = "Model"    )
+E7.6 <- AddMetaData      (E7.6, metadata = "Blastocyst",    col.name = "Source"   )
+E7.6 <- AddMetaData      (E7.6, metadata = "E7.6",          col.name = "ID"       )
+E7.6 <- AddMetaData      (E7.6, metadata = "P_E7.6",        col.name = "rawID"    )
+E7.6 <- AddMetaData      (E7.6, metadata = "E7",            col.name = "rawGA"    )
+E7.6 <- AddMetaData      (E7.6, metadata = "E7",            col.name = "GA"       )
+E7.6 <- AddMetaData      (E7.6, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.6 <- AddMetaData      (E7.6, metadata = "IVF",           col.name = "Type"     )
+E7.6 <- AddMetaData      (E7.6, metadata = "SS2",           col.name = "Gate"     )
+E7.6 <- AddMetaData      (E7.6, metadata = "IVF",           col.name = "Trimester")
+E7.6 <- AddMetaData      (E7.6, metadata = "6",             col.name = "Batch"    )
+E7.6 <- CellCycleScoring (E7.6, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.7 <- subset           (petropoulos, idents = c("E7.7"))
+E7.7 <- AddMetaData      (E7.7, metadata = "IVF",           col.name = "Model"    )
+E7.7 <- AddMetaData      (E7.7, metadata = "Blastocyst",    col.name = "Source"   )
+E7.7 <- AddMetaData      (E7.7, metadata = "E7.7",          col.name = "ID"       )
+E7.7 <- AddMetaData      (E7.7, metadata = "P_E7.7",        col.name = "rawID"    )
+E7.7 <- AddMetaData      (E7.7, metadata = "E7",            col.name = "rawGA"    )
+E7.7 <- AddMetaData      (E7.7, metadata = "E7",            col.name = "GA"       )
+E7.7 <- AddMetaData      (E7.7, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.7 <- AddMetaData      (E7.7, metadata = "IVF",           col.name = "Type"     )
+E7.7 <- AddMetaData      (E7.7, metadata = "SS2",           col.name = "Gate"     )
+E7.7 <- AddMetaData      (E7.7, metadata = "IVF",           col.name = "Trimester")
+E7.7 <- AddMetaData      (E7.7, metadata = "6",             col.name = "Batch"    )
+E7.7 <- CellCycleScoring (E7.7, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.8 <- subset           (petropoulos, idents = c("E7.8"))
+E7.8 <- AddMetaData      (E7.8, metadata = "IVF",           col.name = "Model"    )
+E7.8 <- AddMetaData      (E7.8, metadata = "Blastocyst",    col.name = "Source"   )
+E7.8 <- AddMetaData      (E7.8, metadata = "E7.8",          col.name = "ID"       )
+E7.8 <- AddMetaData      (E7.8, metadata = "P_E7.8",        col.name = "rawID"    )
+E7.8 <- AddMetaData      (E7.8, metadata = "E7",            col.name = "rawGA"    )
+E7.8 <- AddMetaData      (E7.8, metadata = "E7",            col.name = "GA"       )
+E7.8 <- AddMetaData      (E7.8, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.8 <- AddMetaData      (E7.8, metadata = "IVF",           col.name = "Type"     )
+E7.8 <- AddMetaData      (E7.8, metadata = "SS2",           col.name = "Gate"     )
+E7.8 <- AddMetaData      (E7.8, metadata = "IVF",           col.name = "Trimester")
+E7.8 <- AddMetaData      (E7.8, metadata = "6",             col.name = "Batch"    )
+E7.8 <- CellCycleScoring (E7.8, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7.9 <- subset           (petropoulos, idents = c("E7.9"))
+E7.9 <- AddMetaData      (E7.9, metadata = "IVF",           col.name = "Model"    )
+E7.9 <- AddMetaData      (E7.9, metadata = "Blastocyst",    col.name = "Source"   )
+E7.9 <- AddMetaData      (E7.9, metadata = "E7.9",          col.name = "ID"       )
+E7.9 <- AddMetaData      (E7.9, metadata = "P_E7.9",        col.name = "rawID"    )
+E7.9 <- AddMetaData      (E7.9, metadata = "E7",            col.name = "rawGA"    )
+E7.9 <- AddMetaData      (E7.9, metadata = "E7",            col.name = "GA"       )
+E7.9 <- AddMetaData      (E7.9, metadata = "Blastocyst",    col.name = "Tissue"   )
+E7.9 <- AddMetaData      (E7.9, metadata = "IVF",           col.name = "Type"     )
+E7.9 <- AddMetaData      (E7.9, metadata = "SS2",           col.name = "Gate"     )
+E7.9 <- AddMetaData      (E7.9, metadata = "IVF",           col.name = "Trimester")
+E7.9 <- AddMetaData      (E7.9, metadata = "6",             col.name = "Batch"    )
+E7.9 <- CellCycleScoring (E7.9, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+E7 <- merge (E7.10, y = c(E7.11,
+                          E7.12,
+                          E7.13,
+                          E7.14,
+                          E7.15,
+                          E7.16,
+                          E7.17,
+                          E7.19,
+                          E7.2,
+                          E7.3,
+                          E7.4,
+                          E7.5,
+                          E7.6,
+                          E7.7,
+                          E7.8,
+                          E7.9), project = "10X_E7")
+
+E7 <- NormalizeData        (E7)
+E7 <- ScaleData            (E7)
+E7 <- FindVariableFeatures (E7, selection.method = "vst", nfeatures = 2000)
+E7 <- RunPCA               (E7)
+E7 <- RunUMAP              (E7, dims = 1:50)
+
+rm (E7.10,
+    E7.11,
+    E7.12,
+    E7.13,
+    E7.14,
+    E7.15,
+    E7.16,
+    E7.17,
+    E7.19,
+    E7.2,
+    E7.3,
+    E7.4,
+    E7.5,
+    E7.6,
+    E7.7,
+    E7.8,
+    E7.9)
+```
+
+```{r}
+Petropoulos_Blastocyst <- merge (E3, y = c(E4, E4.late, E5, E6, E7), project = "10X_Petropoulos")
+
+rm (petropoulos, E3, E4, E4.late, E5, E6, E7)
+```
+
+# Load the Zhou et al. 2019 data
+
+```{r}
+zhou_counts   <- read_tsv                ("~/Desktop/GSE109555/exprDatRawZhou2019.tsv")
+zhou_counts   <- zhou_counts[!duplicated (zhou_counts$Name), ]
+zhou_counts   <- column_to_rownames      (zhou_counts, var = "Name")
+zhou_metadata <- read.delim              ("~/Desktop/GSE109555/sampleAnnotZhou2019.tsv", row.names = 1)
+zhou          <- CreateSeuratObject      (counts = zhou_counts, meta.data = zhou_metadata)
+
+rm (zhou_counts)
+rm (zhou_metadata)
+```
+
+```{r}
+Idents (zhou) <- zhou@meta.data$DPF
+```
+
+```{r}
+D6 <- subset               (zhou, idents = "D6")
+D6 <- AddMetaData          (D6, metadata = "IVF",        col.name = "Model"    )
+D6 <- AddMetaData          (D6, metadata = "Blastocyst", col.name = "Source"   )
+D6 <- AddMetaData          (D6, metadata = "D6",         col.name = "ID"       )
+D6 <- AddMetaData          (D6, metadata = "Z_D6",       col.name = "rawID"    )
+D6 <- AddMetaData          (D6, metadata = "E6",         col.name = "rawGA"    )
+D6 <- AddMetaData          (D6, metadata = "E6",         col.name = "GA"       )
+D6 <- AddMetaData          (D6, metadata = "Blastocyst", col.name = "Tissue"   )
+D6 <- AddMetaData          (D6, metadata = "IVF",        col.name = "Type"     )
+D6 <- AddMetaData          (D6, metadata = "SS2",        col.name = "Gate"     )
+D6 <- AddMetaData          (D6, metadata = "IVF",        col.name = "Trimester")
+D6 <- AddMetaData          (D6, metadata = "7",          col.name = "Batch"    )
+D6 <- CellCycleScoring     (D6, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+D6 <- NormalizeData        (D6)
+D6 <- ScaleData            (D6)
+D6 <- FindVariableFeatures (D6, selection.method = "vst", nfeatures = 2000)
+D6 <- RunPCA               (D6)
+D6 <- RunUMAP              (D6, dims = 1:50)
+
+D8 <- subset               (zhou, idents = "D8")
+D8 <- AddMetaData          (D8, metadata = "IVF",        col.name = "Model"    )
+D8 <- AddMetaData          (D8, metadata = "Blastocyst", col.name = "Source"   )
+D8 <- AddMetaData          (D8, metadata = "D8",         col.name = "ID"       )
+D8 <- AddMetaData          (D8, metadata = "Z_D8",       col.name = "rawID"    )
+D8 <- AddMetaData          (D8, metadata = "E8",         col.name = "rawGA"    )
+D8 <- AddMetaData          (D8, metadata = "E8",         col.name = "GA"       )
+D8 <- AddMetaData          (D8, metadata = "Blastocyst", col.name = "Tissue"   )
+D8 <- AddMetaData          (D8, metadata = "IVF",        col.name = "Type"     )
+D8 <- AddMetaData          (D8, metadata = "SS2",        col.name = "Gate"     )
+D8 <- AddMetaData          (D8, metadata = "IVF",        col.name = "Trimester")
+D8 <- AddMetaData          (D8, metadata = "7",          col.name = "Batch"    )
+D8 <- CellCycleScoring     (D8, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+D8 <- NormalizeData        (D8)
+D8 <- ScaleData            (D8)
+D8 <- FindVariableFeatures (D8, selection.method = "vst", nfeatures = 2000)
+D8 <- RunPCA               (D8)
+D8 <- RunUMAP              (D8, dims = 1:50)
+
+D10 <- subset               (zhou,  idents = "D10")
+D10 <- AddMetaData          (D10, metadata = "IVF",        col.name = "Model"    )
+D10 <- AddMetaData          (D10, metadata = "Blastocyst", col.name = "Source"   )
+D10 <- AddMetaData          (D10, metadata = "D10",        col.name = "ID"       )
+D10 <- AddMetaData          (D10, metadata = "Z_D10",      col.name = "rawID"    )
+D10 <- AddMetaData          (D10, metadata = "E10",        col.name = "rawGA"    )
+D10 <- AddMetaData          (D10, metadata = "E10",        col.name = "GA"       )
+D10 <- AddMetaData          (D10, metadata = "Blastocyst", col.name = "Tissue"   )
+D10 <- AddMetaData          (D10, metadata = "IVF",        col.name = "Type"     )
+D10 <- AddMetaData          (D10, metadata = "SS2",        col.name = "Gate"     )
+D10 <- AddMetaData          (D10, metadata = "IVF",        col.name = "Trimester")
+D10 <- AddMetaData          (D10, metadata = "7",          col.name = "Batch"    )
+D10 <- CellCycleScoring     (D10, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+D10 <- NormalizeData        (D10)
+D10 <- ScaleData            (D10)
+D10 <- FindVariableFeatures (D10, selection.method = "vst", nfeatures = 2000)
+D10 <- RunPCA               (D10)
+D10 <- RunUMAP              (D10, dims = 1:50)
+
+D12 <- subset               (zhou,  idents = "D12")
+D12 <- AddMetaData          (D12, metadata = "IVF",        col.name = "Model"    )
+D12 <- AddMetaData          (D12, metadata = "Blastocyst", col.name = "Source"   )
+D12 <- AddMetaData          (D12, metadata = "D12",        col.name = "ID"       )
+D12 <- AddMetaData          (D12, metadata = "Z_D12",      col.name = "rawID"    )
+D12 <- AddMetaData          (D12, metadata = "E12",        col.name = "rawGA"    )
+D12 <- AddMetaData          (D12, metadata = "E12",        col.name = "GA"       )
+D12 <- AddMetaData          (D12, metadata = "Blastocyst", col.name = "Tissue"   )
+D12 <- AddMetaData          (D12, metadata = "IVF",        col.name = "Type"     )
+D12 <- AddMetaData          (D12, metadata = "SS2",        col.name = "Gate"     )
+D12 <- AddMetaData          (D12, metadata = "IVF",        col.name = "Trimester")
+D12 <- AddMetaData          (D12, metadata = "7",          col.name = "Batch"    )
+D12 <- CellCycleScoring     (D12, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+D12 <- NormalizeData        (D12)
+D12 <- ScaleData            (D12)
+D12 <- FindVariableFeatures (D12, selection.method = "vst", nfeatures = 2000)
+D12 <- RunPCA               (D12)
+D12 <- RunUMAP              (D12, dims = 1:50)
+      
+D14 <- subset               (zhou,  idents = "D14")
+D14 <- AddMetaData          (D14, metadata = "IVF",        col.name = "Model"    )
+D14 <- AddMetaData          (D14, metadata = "Blastocyst", col.name = "Source"   )
+D14 <- AddMetaData          (D14, metadata = "D14",        col.name = "ID"       )
+D14 <- AddMetaData          (D14, metadata = "Z_D14",      col.name = "rawID"    )
+D14 <- AddMetaData          (D14, metadata = "E14",        col.name = "rawGA"    )
+D14 <- AddMetaData          (D14, metadata = "E14",        col.name = "GA"       )
+D14 <- AddMetaData          (D14, metadata = "Blastocyst", col.name = "Tissue"   )
+D14 <- AddMetaData          (D14, metadata = "IVF",        col.name = "Type"     )
+D14 <- AddMetaData          (D14, metadata = "SS2",        col.name = "Gate"     )
+D14 <- AddMetaData          (D14, metadata = "IVF",        col.name = "Trimester")
+D14 <- AddMetaData          (D14, metadata = "7",          col.name = "Batch"    )
+D14 <- CellCycleScoring     (D14, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+D14 <- NormalizeData        (D14)
+D14 <- ScaleData            (D14)
+D14 <- FindVariableFeatures (D14, selection.method = "vst", nfeatures = 2000)
+D14 <- RunPCA               (D14)
+D14 <- RunUMAP              (D14, dims = 1:50)
+
+Zhou_Blastocyst <- merge (D6, y = c(D8, D10, D12, D14), project = "10X_Zhou")
+
+rm (zhou, D6, D8, D10, D12, D14)
+```
+
+# Integrate the Petroppoulos et al. 2016 and the Zhou et al. 2019 trophectoderm datasets
+
+```{r}
+blastocyst <- merge (Petropoulos_Blastocyst, y = Zhou_Blastocyst, project = "10X_Blastocyst")
+
+rm (Petropoulos_Blastocyst, Zhou_Blastocyst)
+```
+
+# View the merged placental villi seurat object for visual inspection before downstream analyses
+
+```{r}
+blastocyst[["percent.mt"]]   <- PercentageFeatureSet (blastocyst, pattern = "^MT-")
+ribo.genes                   <- grep                 (pattern = "^RP[SL][[:digit:]]", x = rownames (blastocyst), value = TRUE);
+percent.ribo                 <- Matrix::colSums      (x = GetAssayData (blastocyst, slot   = 'counts')[ribo.genes, ]) / 
+                                Matrix::colSums      (x = GetAssayData (blastocyst, slot   = 'counts')              );
+blastocyst[['percent.ribo']] <- percent.ribo
+```
+
+```{r}
+blastocyst$CC.Difference <- blastocyst$S.Score - blastocyst$G2M.Score
+```
+
+## Visualize mitochondrial DNA information
+
+```{r}
+# Visualize final dataset QC metrics using violoin plots
+VlnPlot (object   = blastocyst,
+         features = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo"),
+         group.by =   "GA",
+         ncol     = 2)
+```
+
+```{r}
+# FeatureScatter to visualize feature-feature relationships
+P1 <- FeatureScatter (object = blastocyst, feature1 = "nCount_RNA", feature2 = "percent.mt"  ) + NoLegend()
+P2 <- FeatureScatter (object = blastocyst, feature1 = "nCount_RNA", feature2 = "percent.ribo") + NoLegend()
+P3 <- FeatureScatter (object = blastocyst, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + NoLegend()
+
+CombinePlots (plots = list (P1, P2, P3))
+rm           (P1)
+rm           (P2)
+rm           (P3)
+```
+
+## Integrate All Datasets into One Seurat File
+
+```{r}
+# Increase global max size to sustain heavy computational loads
+options (future.globals.maxSize = 1000000000000000000000000000000000000000000000000000000000000000000000000)
+gc      ()
+```
+
+```{r}
+# Integrate the data based on the "Batch" variable
+blastocyst.list <- SplitObject (blastocyst, split.by = "Batch")
+blastocyst.list <- blastocyst.list [ c("6", "7") ]
+
+rm (blastocyst)
+gc ()
+```
+
+```{r}
+# Normalize the data and regress out variation resulting from the % MT and CC Difference variables
+for (i in 1:length (blastocyst.list)) {
+
+blastocyst.list[[i]] <- SCTransform (blastocyst.list[[i]],
+                                     verbose         = FALSE,
+                                     vars.to.regress = c("percent.mt",
+                                                         "CC.Difference"))
+                                       }
+```
+
+```{r}
+# Integrate the data
+blastocyst.features <- SelectIntegrationFeatures (object.list     = blastocyst.list, nfeatures = 3000)
+blastocyst.list     <- PrepSCTIntegration        (object.list     = blastocyst.list,
+                                                  anchor.features = blastocyst.features,
+                                                  verbose         = FALSE)
+``` 
+
+```{r}
+# Integrate the data (continued)
+blastocyst.anchors <- FindIntegrationAnchors (object.list          = blastocyst.list,
+                                              normalization.method = "SCT",
+                                              anchor.features      = blastocyst.features,
+                                              verbose              = FALSE)
+rm (blastocyst.list)
+rm (blastocyst.features)
+```
+
+```{r}
+# Integrate the data (continued)
+blastocyst  <- IntegrateData (anchorset            = blastocyst.anchors,
+                              normalization.method = "SCT",
+                              verbose              = FALSE)
+rm (blastocyst.anchors)
+```
+
+```{r}
+# Run principal component analysis on integrated data
+blastocyst  <- RunPCA (object         = blastocyst,
+                       do.print       = TRUE,
+                       pcs.print      = 1:5,
+                       features.print = 5)
+```
+
+## Visualize metadata and mitochondrial DNA information
+
+```{r}
+Blastocyst <- FindClusters (Blastocyst, resolution = 0.80)
+Blastocyst <- RunUMAP      (Blastocyst, dims       = 1:50)
+Blastocyst <- RunTSNE      (Blastocyst, dims       = 1:50)
+```
+
+```{r}
+# Label all trophoblast clusters by cell type
+        new.cluster.ids <- c('CTB 3'               = "CTB",
+                             'CTB 4'               = "CTB",
+                             'SCTp 5'              = "SCTp",
+                             'SCTp 1'              = "SCTp",
+                             'Late Trophectoderm'  = "Trophectoderm",
+                             'CTB 2'               = "CTB",
+                             'SCTp 2'              = "SCTp",
+                             'SCTp 4'              = "SCTp",
+                             'Epiblast'            = "Epiblast",
+                             'cCTB'                = "cCTB",
+                             'Early Trophectoderm' = "Trophectoderm",
+                             'EVT'                 = "EVT",
+                             'Primitive Endoderm'  = "Primitive Endoderm",
+                             'CTB 1'               = "CTB",
+                             'SCTp 3'              = "SCTp",
+                             'Morula'              = "Morula",
+                             'Blastocyst'          = "Blastocyst",
+                             '8 cell Embryo'       = "8 cell Embryo")
+
+names (new.cluster.ids) <- levels       (Blastocyst)
+Blastocyst              <- RenameIdents (Blastocyst, new.cluster.ids)
+Blastocyst$celltype     <- Idents       (Blastocyst)
+```
+
+```{r}
+UMAPPlot (Blastocyst, label = TRUE, pt.size = 2)
+```

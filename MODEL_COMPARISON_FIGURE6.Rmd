@@ -1,0 +1,888 @@
+---
+title:  "MODEL_COMPARISON_FIGURE6"
+author: "Matthew J Shannon"
+date:   "18/01/2024"
+output: html_document
+---
+
+# Load in all dependencies
+
+```{r, include = FALSE}
+devtools::install_github ('chris-mcginnis-ucsf/DoubletFinder')
+devtools::install_github ('satijalab/seurat-wrappers')
+remotes::install_github  ("mojaveazure/seurat-disk")
+devtools::install_github ("velocyto-team/velocyto.R")
+BiocManager::install     ("pcaMethods")
+BiocManager::install     ('MAST')
+BiocManager::install     ('org.Hs.eg.db')
+BiocManager::install     (version = "3.12")
+BiocManager::install     ('Seurat')
+BiocManager::install     ('readxl')
+BiocManager::install     ('modes')
+BiocManager::install     ('pheatmap')
+BiocManager::install     ('limma')
+BiocManager::install     ('clustree')
+BiocManager::install     ('clusterProfiler')
+BiocManager::install     ('EnhancedVolcano')
+install.packages         ('fields')
+install.packages         ('plotly')
+install.packages         ("VennDiagram")
+library                  (Seurat)
+library                  (readr)
+library                  (tidyverse)
+library                  (Matrix)
+library                  (dplyr)
+library                  (ggplot2)
+library                  (cowplot)
+library                  (tibble)
+library                  (readxl)
+library                  (sctransform)
+library                  (fields)
+library                  (KernSmooth)
+library                  (ROCR)
+library                  (parallel)
+library                  (reshape2)
+library                  (pheatmap)
+library                  (DoubletFinder)
+library                  (limma)
+library                  (SeuratWrappers)
+library                  (SeuratDisk)
+library                  (plotly)
+library                  (clustree)
+library                  (velocyto.R)
+library                  (MAST)
+library                  (EnhancedVolcano)
+library                  (clusterProfiler)
+library                  (AnnotationDbi)
+library                  (org.Hs.eg.db)
+library                  (VennDiagram)
+library                  (RColorBrewer)
+library                  (EnhancedVolcano)
+library                  (xlsx)
+library                  ("DESeq2")
+library                  ("sva")
+gc                       ()
+```
+
+# Load the integrated and model-specific trophoblast Seurat objects
+
+```{r}
+# Integrated (all models) trophoblast object
+load         (file = "~/Desktop/FINAL_Trophoblast_Data.Rdata")
+DefaultAssay (Trophoblasts) <- "integrated"
+
+# MPI (in vivo) trophoblast object
+load         (file = "~/Desktop/MPI.Rdata")
+DefaultAssay (MPI) <- "integrated"
+
+# TBpOrg (in vitro) trophoblast object
+load         (file = "~/Desktop/TBpOrg.Rdata")
+DefaultAssay (TBpOrg) <- "integrated"
+
+# TBsOrg (in vitro) trophoblast object
+load         (file = "~/Desktop/TBsOrg.Rdata")
+DefaultAssay (TBsOrg) <- "integrated"
+```
+
+# Figure 6
+
+## Pseudotime without the TSC state
+
+```{r}
+Eight <- subset      (Blastocyst, idents = c("8 cell Embryo"))
+Eight <- AddMetaData (Eight, metadata = "2",             col.name = "Merge")
+Eight <- AddMetaData (Eight, metadata = "8 cell Embryo", col.name = "Cell_ID")
+Eight
+
+Morula <- subset      (Blastocyst, idents = c("Morula"))
+Morula <- AddMetaData (Morula, metadata = "2",      col.name = "Merge")
+Morula <- AddMetaData (Morula, metadata = "Morula", col.name = "Cell_ID")
+Morula
+
+blastocyst <- subset      (Blastocyst, idents = c("Blastocyst"))
+blastocyst <- AddMetaData (blastocyst, metadata = "2",          col.name = "Merge")
+blastocyst <- AddMetaData (blastocyst, metadata = "Blastocyst", col.name = "Cell_ID")
+blastocyst
+
+TE <- subset      (Blastocyst, idents = c("Early Trophectoderm", "Late Trophectoderm"))
+TE <- AddMetaData (TE, metadata = "2",  col.name = "Merge")
+TE <- AddMetaData (TE, metadata = "TE", col.name = "Cell_ID")
+TE
+
+TE_CTB <- subset      (Blastocyst, idents = c("CTB 1", "CTB 2", "CTB 3"))
+TE_CTB <- AddMetaData (TE_CTB, metadata = "2",      col.name = "Merge")
+TE_CTB <- AddMetaData (TE_CTB, metadata = "TE_CTB", col.name = "Cell_ID")
+TE_CTB
+
+TE_cCTB <- subset      (Blastocyst, idents = c("cCTB"))
+TE_cCTB <- AddMetaData (TE_cCTB, metadata = "2",       col.name = "Merge")
+TE_cCTB <- AddMetaData (TE_cCTB, metadata = "TE_cCTB", col.name = "Cell_ID")
+TE_cCTB
+
+TE_EVT <- subset      (Blastocyst, idents = c("EVT"))
+TE_EVT <- AddMetaData (TE_EVT, metadata = "2",      col.name = "Merge")
+TE_EVT <- AddMetaData (TE_EVT, metadata = "TE_EVT", col.name = "Cell_ID")
+TE_EVT
+
+TE_SCTp <- subset      (Blastocyst, idents = c("SCTp 1", "SCTp 2", "SCTp 3", "SCTp 4", "SCTp 5"))
+TE_SCTp <- AddMetaData (TE_SCTp, metadata = "2",       col.name = "Merge")
+TE_SCTp <- AddMetaData (TE_SCTp, metadata = "TE_SCTp", col.name = "Cell_ID")
+TE_SCTp
+
+CTB <- subset      (MPI, idents = c("CTB"))
+CTB <- AddMetaData (CTB, metadata = "1",      col.name = "Merge")
+CTB <- AddMetaData (CTB, metadata = "T1_CTB", col.name = "Cell_ID")
+CTB
+
+cCTB <- subset      (MPI, idents = c("cCTB"))
+cCTB <- AddMetaData (cCTB, metadata = "1",       col.name = "Merge")
+cCTB <- AddMetaData (cCTB, metadata = "T1_cCTB", col.name = "Cell_ID")
+cCTB
+
+EVT <- subset      (MPI, idents = c("EVT"))
+EVT <- AddMetaData (EVT, metadata = "1",      col.name = "Merge")
+EVT <- AddMetaData (EVT, metadata = "T1_EVT", col.name = "Cell_ID")
+EVT
+
+SCTp <- subset      (MPI, idents = c("SCTp"))
+SCTp <- AddMetaData (SCTp, metadata = "1",       col.name = "Merge")
+SCTp <- AddMetaData (SCTp, metadata = "T1_SCTp", col.name = "Cell_ID")
+SCTp
+```
+
+```{r}
+Eight[['SCT']]       <- NULL
+Morula[['SCT']]      <- NULL
+blastocyst[['SCT']]  <- NULL
+TE[['SCT']]          <- NULL
+TE_CTB_sub[['SCT']]  <- NULL
+TE_cCTB[['SCT']]     <- NULL
+TE_EVT[['SCT']]      <- NULL
+TE_SCTp_sub[['SCT']] <- NULL
+CTB_sub[['SCT']]     <- NULL
+cCTB_sub[['SCT']]    <- NULL
+EVT_sub[['SCT']]     <- NULL
+SCTp_sub[['SCT']]    <- NULL
+```
+
+```{r}
+DefaultAssay (Eight)      <- "RNA"
+DefaultAssay (Morula)     <- "RNA"
+DefaultAssay (blastocyst) <- "RNA"
+DefaultAssay (TE)         <- "RNA"
+DefaultAssay (TE_CTB)     <- "RNA"
+DefaultAssay (TE_cCTB)    <- "RNA"
+DefaultAssay (TE_EVT)     <- "RNA"
+DefaultAssay (TE_SCTp)    <- "RNA"
+DefaultAssay (CTB)        <- "RNA"
+DefaultAssay (cCTB)       <- "RNA"
+DefaultAssay (EVT)        <- "RNA"
+DefaultAssay (SCTp)       <- "RNA"
+```
+
+```{r}
+PCC_noTSC <- merge (Eight, y = c(Morula, blastocyst, TE, TE_CTB, TE_cCTB, TE_EVT, TE_SCTp, CTB, cCTB, EVT, SCTp),
+                    add.cell.ids = c("8 cell Embryo", "Morula", "Blastocyst", "TE", "TE_CTB", "TE_cCTB", "TE_EVT", "TE_SCTp", "T1_CTB", "T1_cCTB", "T1_EVT", "T1_SCTp"),
+                    project      = "PCC",
+                    merge.data   = TRUE)
+```
+
+```{r}
+# Integrate the data based on the "Batch" variable
+PCC.list <- SplitObject (PCC_noTSC, split.by = "Merge")
+PCC.list <- PCC.list [ c("1", "2") ]
+
+rm (PCC)
+```
+
+```{r}
+# Normalize the data and regress out variation resulting from the % MT and CC Difference variables
+for (i in 1:length (PCC.list)) { PCC.list[[i]] <- SCTransform (PCC.list[[i]], verbose = FALSE) }
+```
+
+```{r}
+# Increase global max size to sustain heavy computational loads
+options (future.globals.maxSize = 10000000000000000000000000000000000000000000000000000000000000000000000000000000)
+```
+
+```{r}
+# Integrate the data
+PCC.features <- SelectIntegrationFeatures (object.list     = PCC.list, nfeatures = 3000)
+PCC.list     <- PrepSCTIntegration        (object.list     = PCC.list,
+                                           anchor.features = PCC.features,
+                                           verbose         = FALSE)
+``` 
+
+```{r}
+# Integrate the data (continued)
+PCC.anchors <- FindIntegrationAnchors (object.list          = PCC.list,
+                                       normalization.method = "SCT",
+                                       anchor.features      = PCC.features,
+                                       verbose              = FALSE)
+rm (PCC.list)
+rm (PCC.features)
+```
+
+```{r}
+# Integrate the data (continued)
+PCCData_noTSC  <- IntegrateData (anchorset            = PCC.anchors,
+                                 normalization.method = "SCT",
+                                 verbose              = FALSE)
+rm (PCC.anchors)
+```
+
+```{r}
+# Run principal component analysis on integrated data
+PCCData_noTSC <- RunPCA        (PCCData_noTSC)
+PCCData_noTSC <- FindNeighbors (PCCData_noTSC)
+PCCData_noTSC <- FindClusters  (PCCData_noTSC, resolution = 0.30)
+PCCData_noTSC <- RunUMAP       (PCCData_noTSC, dims       = 1:30)
+```
+
+```{r}
+PCCData_noTSC.monocle <- as.CellDataSet      (PCCData_noTSC, assay = "RNA")
+PCCData_noTSC.monocle <- estimateSizeFactors (PCCData_noTSC.monocle)
+PCCData_noTSC.monocle <- estimateDispersions (PCCData_noTSC.monocle)
+PCCData_noTSC.monocle <- detectGenes         (PCCData_noTSC.monocle, min_expr = 0.1)
+```
+
+```{r}
+PCCData_noTSC.monocle_expressed_genes <- row.names (subset (fData (PCCData_noTSC.monocle), num_cells_expressed >= 10))
+```
+
+```{r, Figure 3A MPI (in vivo) analysis}
+ERVFRD_id <- row.names (subset (fData (PCCData_noTSC.monocle), gene_short_name == "ERVFRD-1"))
+HLAG_id   <- row.names (subset (fData (PCCData_noTSC.monocle), gene_short_name == "HLA-G"   ))
+NANOG_id  <- row.names (subset (fData (PCCData_noTSC.monocle), gene_short_name == "NANOG"   ))
+POU5F1_id <- row.names (subset (fData (PCCData_noTSC.monocle), gene_short_name == "POU5F1"  ))
+
+PCCData_noTSC.monocle.2 <- newCellTypeHierarchy ()
+PCCData_noTSC.monocle.2 <- addCellType          (PCCData_noTSC.monocle.2,
+                                                 "SCT",
+                                                 classify_func = function (x) { x [ERVFRD_id,  ]  >= 0.50   })
+PCCData_noTSC.monocle.2 <- addCellType          (PCCData_noTSC.monocle.2,
+                                                 "EVT",
+                                                 classify_func = function (x) { x [HLAG_id,    ]  >= 2.00   })
+PCCData_noTSC.monocle.2 <- addCellType          (PCCData_noTSC.monocle.2,
+                                                 "Embryo",
+                                                 classify_func = function (x) { x [NANOG_id,   ]  >= 0.30 &
+                                                                                x [POU5F1_id,  ]  >= 0.10 &
+                                                                                x [ERVFRD_id,  ]  <  1.00 &
+                                                                                x [HLAG_id,    ]  <  2.00   })
+PCCData_noTSC.monocle   <- classifyCells        (PCCData_noTSC.monocle, PCCData_noTSC.monocle.2)
+```
+
+```{r, Figure 3A MPI (in vivo) analysis}
+marker_diff              <- markerDiffTable   (PCCData_noTSC.monocle[PCCData_noTSC.monocle_expressed_genes, ], PCCData_noTSC.monocle.2, cores = 4)
+semisup_clustering_genes <- row.names         (marker_diff)[order (marker_diff$qval)][1:500]
+PCCData_noTSC.monocle    <- setOrderingFilter (PCCData_noTSC.monocle, semisup_clustering_genes)
+PCCData_noTSC.monocle    <- reduceDimension   (PCCData_noTSC.monocle,
+                                               max_components = 2,
+                                               method         = 'DDRTree',
+                                               norm_method    = 'none',
+                                               pseudo_expr    = 0)
+PCCData_noTSC.monocle    <- orderCells        (PCCData_noTSC.monocle)
+PCCData_noTSC.monocle    <- orderCells        (PCCData_noTSC.monocle, root_state = 3)
+
+rm (PCCData_noTSC.monocle.2)
+rm (marker_diff)
+rm (semisup_clustering_genes)
+```
+
+```{r}
+plot_cell_trajectory (PCCData_noTSC.monocle, color_by = "Cell_ID") + theme (legend.position = "right") + NoLegend ()
+```
+
+## Pseudotime with the TSC state
+
+```{r}
+PCCData.monocle <- as.CellDataSet      (PCCData, assay = "RNA")
+PCCData.monocle <- estimateSizeFactors (PCCData.monocle)
+PCCData.monocle <- estimateDispersions (PCCData.monocle)
+PCCData.monocle <- detectGenes         (PCCData.monocle, min_expr = 0.1)
+```
+
+```{r}
+PCCData.monocle_expressed_genes <- row.names (subset (fData (PCCData.monocle), num_cells_expressed >= 10))
+```
+
+```{r, Figure 3A MPI (in vivo) analysis}
+ERVFRD_id <- row.names (subset (fData (PCCData.monocle), gene_short_name == "ERVFRD-1"))
+HLAG_id   <- row.names (subset (fData (PCCData.monocle), gene_short_name == "HLA-G"   ))
+NANOG_id  <- row.names (subset (fData (PCCData.monocle), gene_short_name == "NANOG"   ))
+POU5F1_id <- row.names (subset (fData (PCCData.monocle), gene_short_name == "POU5F1"  ))
+
+PCCData.monocle.2 <- newCellTypeHierarchy ()
+PCCData.monocle.2 <- addCellType          (PCCData.monocle.2,
+                                           "SCT",
+                                           classify_func = function (x) { x [ERVFRD_id,  ]  >= 0.50   })
+PCCData.monocle.2 <- addCellType          (PCCData.monocle.2,
+                                           "EVT",
+                                           classify_func = function (x) { x [HLAG_id,    ]  >= 2.00   })
+PCCData.monocle.2 <- addCellType          (PCCData.monocle.2,
+                                           "Embryo",
+                                           classify_func = function (x) { x [NANOG_id,   ]  >= 0.30 &
+                                                                          x [POU5F1_id,  ]  >= 0.10 &
+                                                                          x [ERVFRD_id,  ]  <  1.00 &
+                                                                          x [HLAG_id,    ]  <  2.00   })
+PCCData.monocle   <- classifyCells        (PCCData.monocle, PCCData.monocle.2)
+```
+
+```{r, Figure 3A MPI (in vivo) analysis}
+marker_diff              <- markerDiffTable   (PCCData.monocle[PCCData.monocle_expressed_genes, ], PCCData.monocle.2, cores = 4)
+semisup_clustering_genes <- row.names         (marker_diff)[order (marker_diff$qval)][1:500]
+PCCData.monocle          <- setOrderingFilter (PCCData.monocle, semisup_clustering_genes)
+PCCData.monocle          <- reduceDimension   (PCCData.monocle,
+                                               max_components = 2,
+                                               method         = 'DDRTree',
+                                               norm_method    = 'none',
+                                               pseudo_expr    = 0)
+PCCData.monocle          <- orderCells        (PCCData.monocle)
+PCCData.monocle          <- orderCells        (PCCData.monocle, root_state = 3)
+
+rm (PCCData.monocle.2)
+rm (marker_diff)
+rm (semisup_clustering_genes)
+```
+
+```{r}
+plot_cell_trajectory (PCCData.monocle, color_by = "Cell_ID") + theme (legend.position = "right") + NoLegend ()
+```
+
+## TSC state gene markers
+
+```{r, Figure 6B renaming cluster idents}
+Trophoblasts <- RenameIdents (Trophoblasts,
+                              'CTB 1'  = "CTB",
+                              'CTB 2'  = "CTB",
+                              'CTB 3'  = "CTB",
+                              'CTB 4'  = "CTB",
+                              'TSC'    = "TSC",
+                              'cCTB 1' = "cCTB",
+                              'cCTB 2' = "cCTB",
+                              'cCTB 3' = "cCTB",
+                              'EVT'    = "EVT",
+                              'SCTp 1' = "SCTp",
+                              'SCTp 2' = "SCTp")
+
+Trophoblasts$celltype <- Idents (Trophoblasts)
+```
+
+```{r, Figure 6B dotplot}
+DotPlot (Trophoblasts,
+         features  = c("FTL",
+                       "TMSB4X",
+                       "IL32",
+                       "UPP1",
+                       "NPPB",
+                       "ISG15",
+                       "NEAT1",
+                       "GADD45A",
+                       "7SK.2",
+                       "S100A16",
+                       "TUBB2A",
+                       "CLU",
+                       "IFI27",
+                       "CD9",
+                       "IFITM3",
+                       "EPCAM",
+                       "SCD",
+                       "TUBB2B",
+                       "C12orf75",
+                       "ITGA2",
+                       "MALAT1",
+                       "MTRNR2L12",
+                       "SNX2",
+                       "COL1A2",
+                       "TAGLN",
+                       "SOX15"),
+         assay     = "RNA",
+         cols      = c("lightgrey", "red"),
+         col.min   = 0,
+         col.max   = 1,
+         dot.min   = 0,
+         dot.scale = 15)
+```
+
+# Supplemental Figure 6
+
+## Peri-implantation embryo data
+
+```{r, Supplemental figure 6A UMAP}
+UMAPPlot (Blastocyst, label = TRUE, pt.size = 3) + NoLegend ()
+```
+
+```{r, Supplemental figure 6B dotplot}
+my_levels <- c("8 cell Embryo",
+               "Morula",
+               "Blastocyst",
+               "Epiblast",
+               "Primitive Endoderm",
+               "Trophectoderm",
+               "CTB",
+               "cCTB",
+               "EVT",
+               "SCTp")
+
+Blastocyst@active.ident <- factor (Blastocyst@active.ident, levels = my_levels)
+
+DotPlot (Blastocyst,
+         features  = c("POU5F1",
+                       "NANOG",
+                       "CDX2",
+                       "TFAP2A",
+                       "TFAP2C",
+                       "GATA2",
+                       "GATA3",
+                       "CGB",
+                       "ERVFRD-1",
+                       "HLA-G",
+                       "NOTCH2",
+                       "ITGA2",
+                       "NOTCH1",
+                       "EPCAM",
+                       "TEAD4",
+                       "TP63",
+                       "BCAM",
+                       "MKI67",
+                       "CCNA2"),
+         assay     = "RNA",
+         cols      = c("lightgrey", "red"),
+         col.min   = 0,
+         col.max   = 1,
+         dot.min   = 0,
+         dot.scale = 15)
+```
+
+## First trimester and peri-implantation data integration
+
+```{r}
+Eight <- subset      (Blastocyst, idents = c("8 cell Embryo"))
+Eight <- AddMetaData (Eight, metadata = "2",             col.name = "Merge")
+Eight <- AddMetaData (Eight, metadata = "8 cell Embryo", col.name = "Cell_ID")
+Eight
+
+Morula <- subset      (Blastocyst, idents = c("Morula"))
+Morula <- AddMetaData (Morula, metadata = "2",      col.name = "Merge")
+Morula <- AddMetaData (Morula, metadata = "Morula", col.name = "Cell_ID")
+Morula
+
+blastocyst <- subset      (Blastocyst, idents = c("Blastocyst"))
+blastocyst <- AddMetaData (blastocyst, metadata = "2",          col.name = "Merge")
+blastocyst <- AddMetaData (blastocyst, metadata = "Blastocyst", col.name = "Cell_ID")
+blastocyst
+
+TE <- subset      (Blastocyst, idents = c("Early Trophectoderm", "Late Trophectoderm"))
+TE <- AddMetaData (TE, metadata = "2",  col.name = "Merge")
+TE <- AddMetaData (TE, metadata = "TE", col.name = "Cell_ID")
+TE
+
+TE_CTB <- subset      (Blastocyst, idents = c("CTB 1", "CTB 2", "CTB 3"))
+TE_CTB <- AddMetaData (TE_CTB, metadata = "2",      col.name = "Merge")
+TE_CTB <- AddMetaData (TE_CTB, metadata = "TE_CTB", col.name = "Cell_ID")
+TE_CTB
+
+TE_cCTB <- subset      (Blastocyst, idents = c("cCTB"))
+TE_cCTB <- AddMetaData (TE_cCTB, metadata = "2",       col.name = "Merge")
+TE_cCTB <- AddMetaData (TE_cCTB, metadata = "TE_cCTB", col.name = "Cell_ID")
+TE_cCTB
+
+TE_EVT <- subset      (Blastocyst, idents = c("EVT"))
+TE_EVT <- AddMetaData (TE_EVT, metadata = "2",      col.name = "Merge")
+TE_EVT <- AddMetaData (TE_EVT, metadata = "TE_EVT", col.name = "Cell_ID")
+TE_EVT
+
+TE_SCTp <- subset      (Blastocyst, idents = c("SCTp 1", "SCTp 2", "SCTp 3", "SCTp 4", "SCTp 5"))
+TE_SCTp <- AddMetaData (TE_SCTp, metadata = "2",       col.name = "Merge")
+TE_SCTp <- AddMetaData (TE_SCTp, metadata = "TE_SCTp", col.name = "Cell_ID")
+TE_SCTp
+
+TP_TSC <- subset      (TBpOrg, idents = c("TSC"))
+TP_TSC <- AddMetaData (TSC, metadata = "1",      col.name = "Merge")
+TP_TSC <- AddMetaData (TSC, metadata = "TP_TSC", col.name = "Cell_ID")
+TP_TSC
+
+TS_TSC <- subset      (TBsOrg, idents = c("TSC"))
+TS_TSC <- AddMetaData (TSC, metadata = "1",      col.name = "Merge")
+TS_TSC <- AddMetaData (TSC, metadata = "TS_TSC", col.name = "Cell_ID")
+TS_TSC
+
+CTB <- subset      (MPI, idents = c("CTB"))
+CTB <- AddMetaData (CTB, metadata = "1",      col.name = "Merge")
+CTB <- AddMetaData (CTB, metadata = "T1_CTB", col.name = "Cell_ID")
+CTB
+
+cCTB <- subset      (MPI, idents = c("cCTB"))
+cCTB <- AddMetaData (cCTB, metadata = "1",       col.name = "Merge")
+cCTB <- AddMetaData (cCTB, metadata = "T1_cCTB", col.name = "Cell_ID")
+cCTB
+
+EVT <- subset      (MPI, idents = c("EVT"))
+EVT <- AddMetaData (EVT, metadata = "1",      col.name = "Merge")
+EVT <- AddMetaData (EVT, metadata = "T1_EVT", col.name = "Cell_ID")
+EVT
+
+SCTp <- subset      (MPI, idents = c("SCTp"))
+SCTp <- AddMetaData (SCTp, metadata = "1",       col.name = "Merge")
+SCTp <- AddMetaData (SCTp, metadata = "T1_SCTp", col.name = "Cell_ID")
+SCTp
+```
+
+```{r}
+Eight[['SCT']]      <- NULL
+Morula[['SCT']]     <- NULL
+blastocyst[['SCT']] <- NULL
+TE[['SCT']]         <- NULL
+TE_CTB[['SCT']]     <- NULL
+TE_cCTB[['SCT']]    <- NULL
+TE_EVT[['SCT']]     <- NULL
+TE_SCTp[['SCT']]    <- NULL
+TP_TSC[['SCT']]     <- NULL
+TS_TSC[['SCT']]     <- NULL
+CTB[['SCT']]        <- NULL
+cCTB[['SCT']]       <- NULL
+EVT[['SCT']]        <- NULL
+SCTp[['SCT']]       <- NULL
+```
+
+```{r}
+DefaultAssay (Eight)      <- "RNA"
+DefaultAssay (Morula)     <- "RNA"
+DefaultAssay (blastocyst) <- "RNA"
+DefaultAssay (TE)         <- "RNA"
+DefaultAssay (TE_CTB)     <- "RNA"
+DefaultAssay (TE_cCTB)    <- "RNA"
+DefaultAssay (TE_EVT)     <- "RNA"
+DefaultAssay (TE_SCTp)    <- "RNA"
+DefaultAssay (TP_TSC)     <- "RNA"
+DefaultAssay (TS_TSC)     <- "RNA"
+DefaultAssay (CTB)        <- "RNA"
+DefaultAssay (cCTB)       <- "RNA"
+DefaultAssay (EVT)        <- "RNA"
+DefaultAssay (SCTp)       <- "RNA"
+```
+
+```{r}
+PCC <- merge (TP_TSC, y = c(TS_TSC, Eight, Morula, blastocyst, TE, TE_CTB, TE_cCTB, TE_EVT, TE_SCTp, CTB, cCTB, EVT, SCTp),
+              add.cell.ids = c("TP_TSC", "TS_TSC", "8 cell Embryo", "Morula", "Blastocyst", "TE", "TE_CTB", "TE_cCTB", "TE_EVT", "TE_SCTp", "T1_CTB", "T1_cCTB", "T1_EVT", "T1_SCTp"),
+              project      = "PCC",
+              merge.data   = TRUE)
+```
+
+```{r}
+# Integrate the data based on the "Batch" variable
+PCC.list <- SplitObject (PCC, split.by = "Merge")
+PCC.list <- PCC.list [ c("1", "2") ]
+
+rm (PCC)
+```
+
+```{r}
+# Normalize the data and regress out variation resulting from the % MT and CC Difference variables
+for (i in 1:length (PCC.list)) { PCC.list[[i]] <- SCTransform (PCC.list[[i]], verbose = FALSE) }
+```
+
+```{r}
+# Increase global max size to sustain heavy computational loads
+options (future.globals.maxSize = 10000000000000000000000000000000000000000000000000000000000000000000000000000000)
+```
+
+```{r}
+# Integrate the data
+PCC.features <- SelectIntegrationFeatures (object.list     = PCC.list, nfeatures = 3000)
+PCC.list     <- PrepSCTIntegration        (object.list     = PCC.list,
+                                           anchor.features = PCC.features,
+                                           verbose         = FALSE)
+``` 
+
+```{r}
+# Integrate the data (continued)
+PCC.anchors <- FindIntegrationAnchors (object.list          = PCC.list,
+                                       normalization.method = "SCT",
+                                       anchor.features      = PCC.features,
+                                       verbose              = FALSE)
+rm (PCC.list)
+rm (PCC.features)
+```
+
+```{r}
+# Integrate the data (continued)
+PCCData  <- IntegrateData (anchorset            = PCC.anchors,
+                           normalization.method = "SCT",
+                           verbose              = FALSE)
+rm (PCC.anchors)
+```
+
+```{r}
+# Run principal component analysis on integrated data
+PCCData <- RunPCA        (PCCData)
+PCCData <- FindNeighbors (PCCData)
+PCCData <- FindClusters  (PCCData, resolution = 0.30)
+PCCData <- RunUMAP       (PCCData, dims       = 1:30)
+```
+
+```{r, Supplemental figure 6C heatmap}
+Idents (PCCData) <- PCCData$Cell_ID
+av.exp       <- AverageExpression (PCCData)$RNA
+cor.exp      <- as.data.frame     (cor (av.exp))
+cor.exp$x    <- rownames          (cor.exp)
+cor.df       <- tidyr::gather     (data = cor.exp, y, correlation, c("8 cell Embryo",
+                                                                     "Morula",
+                                                                     "Blastocyst",
+                                                                     "TE",
+                                                                     "TE_CTB",
+                                                                     "TE_cCTB",
+                                                                     "TE_EVT",
+                                                                     "TE_SCTp",
+                                                                     "TP_TSC",
+                                                                     "TS_TSC",
+                                                                     "T1_CTB",
+                                                                     "T1_cCTB",
+                                                                     "T1_EVT",
+                                                                     "T1_SCTp"))
+cor.df
+
+my_levels <- c("8 cell Embryo",
+               "Morula",
+               "Blastocyst",
+               "TE",
+               "TE_CTB",
+               "TE_cCTB",
+               "TE_EVT",
+               "TE_SCTp",
+               "TP_TSC",
+               "TS_TSC",
+               "T1_CTB",
+               "T1_cCTB",
+               "T1_EVT",
+               "T1_SCTp")
+
+cor.df$x  <- factor (cor.df$x, levels = my_levels)
+cor.df$y  <- factor (cor.df$y, levels = my_levels)
+
+ggplot               (cor.df, aes (x, y, fill = correlation)) +
+geom_tile            () +
+scale_fill_gradientn (limits = c(0,1), colours = colorRampPalette (rev (brewer.pal (n = 7, name = "RdYlBu"))) (100))
+```
+
+```{r, Supplemental figure 6D dotplot}
+DotPlot (PCCData,
+         features  = c("ITGA2",
+                       "SOX15",
+                       "CD44",
+                       "TAGLN",
+                       "TMSB4X",
+                       "NPPB",
+                       "7SK.2",
+                       "TUBB2B",
+                       "SOX15",
+                       "CGB8",
+                       "ERVFRD-1",
+                       "SDC1",
+                       "HLA-G",
+                       "ITGA5",
+                       "ITGA1",
+                       "NOTCH2",
+                       "NOTCH1",
+                       "EPCAM",
+                       "TEAD4",
+                       "TP63",
+                       "BCAM",
+                       "ELF5",
+                       "TFAP2A",
+                       "TFAP2C",
+                       "GATA2",
+                       "GATA3",
+                       "MKI67",
+                       "CCNA2"),
+         assay     = "RNA",
+         cols      = c("lightgrey", "red"),
+         col.min   = 0,
+         col.max   = 1,
+         dot.min   = 0,
+         dot.scale = 15)
+```
+
+## Differential gene expression analysis
+
+```{r, Supplemental figure 6E differential gene expression analysis}
+DefaultAssay (PCCData) <- "RNA"
+
+TSC.response <- FindMarkers (PCCData,
+                             ident.1         = c("TP_TSC", "TP_TSC"),
+                             ident.2         = c("TE_CTB"),
+                             test.use        = "MAST",
+                             logfc.threshold = -Inf,
+                             min.pct         = -Inf,
+                             min.diff.pct    = -Inf,
+                             verbose         = FALSE)
+                     head   (TSC.response, n = 100)
+```
+
+```{r, Supplemental figure 6E}
+write.xlsx (TSC.response, file = "TSC_vs_periCTB_DGE.xlsx")
+```
+
+```{r, Supplemental figure 6E volcano plot}
+EnhancedVolcano (TSC.response,
+                 lab             = rownames (TSC.response),
+                 x               = "avg_log2FC",
+                 y               = "p_val_adj",
+                 FCcutoff        = 1.00,
+                 pCutoff         = 10e-50,
+                 pointSize       = 4.0,
+                 col             = c('grey', 'grey', 'grey', 'red'),
+                 colAlpha        = 1,
+                 selectLab       = c('MALAT1', 'NEAT1', 'ISG15', 'ITGA2', 'TAGLN', 'GCM1', 'EEF1G', 'RNR2', 'PGF', 'GATA2'),
+                 xlim            = c(-6, 6),
+                 ylim            = c(0, 325),
+                 gridlines.major = FALSE,
+                 drawConnectors  = TRUE, 
+                 gridlines.minor = FALSE) + NoLegend () + ggtitle (NULL)
+```
+
+## Comparison against bulk RNA-seq data from 2D hTSC cell cultures
+
+```{r, Supplemental figure 6F subset}
+CT27 <- subset (TBsOrg, subset = ID == "CT27")
+CT27
+
+CT29 <- subset (TBsOrg, subset = ID == "CT29")
+CT29
+
+CT30 <- subset (TBsOrg, subset = ID == "CT30")
+CT30
+```
+
+```{r, Supplemental figure 6F data prep}
+Sheridan.counts
+Sheridan.counts <- NormalizeData      (Sheridan.counts, scale.factor = 1000000)
+Sheridan.counts <- as.data.frame      (Sheridan.counts)
+Sheridan.counts <- rownames_to_column (Sheridan.counts, "gene")
+Sheridan.counts
+
+CT27.TBsOrg.avg <- AverageExpression  (CT27)$RNA
+CT27.TBsOrg.avg <- NormalizeData      (CT27.TBsOrg.avg, scale.factor = 1000000)
+CT27.TBsOrg.avg <- as.data.frame      (CT27.TBsOrg.avg)
+CT27.TBsOrg.avg <- rownames_to_column (CT27.TBsOrg.avg, "gene")
+CT27.TBsOrg.avg
+
+CT29.TBsOrg.avg <- AverageExpression  (CT29)$RNA
+CT29.TBsOrg.avg <- NormalizeData      (CT29.TBsOrg.avg, scale.factor = 1000000)
+CT29.TBsOrg.avg <- as.data.frame      (CT29.TBsOrg.avg)
+CT29.TBsOrg.avg <- rownames_to_column (CT29.TBsOrg.avg, "gene")
+CT29.TBsOrg.avg
+      
+CT30.TBsOrg.avg <- AverageExpression  (CT30)$RNA
+CT30.TBsOrg.avg <- NormalizeData      (CT30.TBsOrg.avg, scale.factor = 1000000)
+CT30.TBsOrg.avg <- as.data.frame      (CT30.TBsOrg.avg)
+CT30.TBsOrg.avg <- rownames_to_column (CT30.TBsOrg.avg, "gene")
+CT30.TBsOrg.avg
+      
+TSC.TBsOrg.avg <- AverageExpression  (TSC)$RNA
+TSC.TBsOrg.avg <- NormalizeData      (TSC.TBsOrg.avg, scale.factor = 1000000)
+TSC.TBsOrg.avg <- as.data.frame      (TSC.TBsOrg.avg)
+TSC.TBsOrg.avg <- rownames_to_column (TSC.TBsOrg.avg, "gene")
+TSC.TBsOrg.avg
+```
+
+```{r, Supplemental figure 6F data merge}
+BULK <- full_join          (TSC.TBsOrg.avg, CT27.TBsOrg.avg, by = "gene")
+BULK <- full_join          (BULK,           CT29.TBsOrg.avg, by = "gene")
+BULK <- full_join          (BULK,           CT30.TBsOrg.avg, by = "gene")
+BULK <- full_join          (BULK,           Sheridan.counts, by = "gene")
+BULK <- na.omit            (BULK)
+BULK <- remove_rownames    (BULK)
+BULK <- column_to_rownames (BULK, "gene")
+BULK
+```
+
+```{r, Supplemental figure 6F 2D hTSC bulk RNA-seq metadata}
+Metadata <- read_excel ("~/Desktop/Metadata.xlsx")
+Metadata
+```
+
+```{r, Supplemental figure 6F batch correction with ComBat}
+BULK_cor = ComBat (dat         = BULK2,
+                   batch       = Metadata$Source,
+                   mod         = NULL,
+                   par.prior   = TRUE,
+                   prior.plots = FALSE )
+
+BULK_cor2 <- BULK_cor + 1
+```
+
+```{r, Supplemental figure 6F}
+dds <- DESeqDataSetFromMatrix (countData = round (BULK_cor2), 
+                               colData   = Metadata,
+                               design    = ~1)
+```
+
+```{r, Supplemental figure 6F}
+vsdata <- varianceStabilizingTransformation (dds, blind = FALSE)
+vsdata$CellType
+```
+
+```{r, Supplemental figure 6F PCA plot}
+plotPCA (vsdata, intgroup = "Lab") + geom_point (shape = factor (vsdata$Shape), size = 3) + NoLegend ()
+```
+
+## Integrated trophoblast data TSC state and cCTB2 state comparison
+
+```{r, Supplemental figure 6G UMAPs}
+FeaturePlot (Trophoblasts,
+             label      = FALSE,
+             pt.size    = 3,
+             split.by   = "Model",
+             features   = c("ITGA2"),
+             min.cutoff = 0,
+             order      = TRUE,
+             cols       = c("grey", "red"))
+
+FeaturePlot (Trophoblasts,
+             label      = FALSE,
+             pt.size    = 3,
+             split.by   = "Model",
+             features   = c("TAGLN"),
+             min.cutoff = 0,
+             order      = TRUE,
+             cols       = c("grey", "red"))
+```
+
+## Differential gene expression
+
+```{r, Supplemental figure 6H differential gene expression analysis}
+DefaultAssay (Trophoblasts) <- "RNA"
+
+TSC.response <- FindMarkers (Trophoblasts,
+                             ident.1         = c("TSC"),
+                             ident.2         = c("cCTB 2"),
+                             test.use        = "MAST",
+                             logfc.threshold = -Inf,
+                             min.pct         = -Inf,
+                             min.diff.pct    = -Inf,
+                             verbose         = FALSE)
+                     head   (TSC.response, n = 100)
+```
+
+```{r, Supplemental figure 6H}
+write.xlsx (TSC.response, file = "TSC_vs_cCTB2_DGE.xlsx")
+```
+
+```{r, Supplemental figure 6H volcano plot}
+EnhancedVolcano (TSC.response,
+                 lab             = rownames (TSC.response),
+                 x               = "avg_log2FC",
+                 y               = "p_val_adj",
+                 FCcutoff        = 1.00,
+                 pCutoff         = 10e-50,
+                 pointSize       = 4.0,
+                 col             = c('grey', 'grey', 'grey', 'red'),
+                 colAlpha        = 1,
+                 selectLab       = c('SCD', 'EPCAM', 'ISG15', 'TMSB4X', 'NEAT1', 'ITGA2', 'IGFBP3', 'FN1', 'TAGLN2', 'PAGE4', 'EGR1', 'COL17A1'),
+                 xlim            = c(-6, 6),
+                 ylim            = c(0, 325),
+                 gridlines.major = FALSE,
+                 drawConnectors  = TRUE, 
+                 gridlines.minor = FALSE) + NoLegend () + ggtitle (NULL)
+```

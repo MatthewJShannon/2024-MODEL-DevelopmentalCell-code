@@ -1,0 +1,393 @@
+---
+title:  "MODEL_COMPARISON_FIGURE4"
+author: "Matthew J Shannon"
+date:   "18/01/2024"
+output: html_document
+---
+
+# Load in all dependencies
+
+```{r, include = FALSE}
+devtools::install_github ('chris-mcginnis-ucsf/DoubletFinder')
+devtools::install_github ('satijalab/seurat-wrappers')
+remotes::install_github  ("mojaveazure/seurat-disk")
+devtools::install_github ("velocyto-team/velocyto.R")
+BiocManager::install     ("pcaMethods")
+BiocManager::install     ('MAST')
+BiocManager::install     ('org.Hs.eg.db')
+BiocManager::install     (version = "3.12")
+BiocManager::install     ('Seurat')
+BiocManager::install     ('readxl')
+BiocManager::install     ('modes')
+BiocManager::install     ('pheatmap')
+BiocManager::install     ('limma')
+BiocManager::install     ('clustree')
+BiocManager::install     ('clusterProfiler')
+BiocManager::install     ('EnhancedVolcano')
+install.packages         ('fields')
+install.packages         ('plotly')
+install.packages         ("VennDiagram")
+library                  (Seurat)
+library                  (readr)
+library                  (tidyverse)
+library                  (Matrix)
+library                  (dplyr)
+library                  (ggplot2)
+library                  (ggpubr)
+library                  (cowplot)
+library                  (tibble)
+library                  (readxl)
+library                  (sctransform)
+library                  (fields)
+library                  (KernSmooth)
+library                  (ROCR)
+library                  (parallel)
+library                  (reshape2)
+library                  (pheatmap)
+library                  (DoubletFinder)
+library                  (limma)
+library                  (SeuratWrappers)
+library                  (SeuratDisk)
+library                  (plotly)
+library                  (clustree)
+library                  (velocyto.R)
+library                  (MAST)
+library                  (EnhancedVolcano)
+library                  (clusterProfiler)
+library                  (AnnotationDbi)
+library                  (org.Hs.eg.db)
+library                  (VennDiagram)
+library                  (RColorBrewer)
+library                  (EnhancedVolcano)
+library                  (xlsx)
+gc                       ()
+sessionInfo              ()
+```
+
+# Load the integrated and model-specific trophoblast Seurat objects
+
+```{r}
+# Integrated (all models) trophoblast object
+load         (file = "~/Desktop/FINAL_Trophoblast_Data.Rdata")
+DefaultAssay (Trophoblasts) <- "integrated"
+
+# MPI (in vivo) trophoblast object
+load         (file = "~/Desktop/MPI.Rdata")
+DefaultAssay (MPI) <- "integrated"
+
+# TBpOrg (in vitro) trophoblast object
+load         (file = "~/Desktop/TBpOrg.Rdata")
+DefaultAssay (TBpOrg) <- "integrated"
+
+# TBsOrg (in vitro) trophoblast object
+load         (file = "~/Desktop/TBsOrg.Rdata")
+DefaultAssay (TBsOrg) <- "integrated"
+```
+
+# Figure 6
+
+## Villous Differentiation Branch Comparison
+
+```{r, Figure 4A, Integrated (in vivo + in vitro) villous differentiation branch subset}
+Villous <- subset (Trophoblasts, idents = c("CTB 1", "CTB 2", "CTB 3", "CTB 4", "SCTp 1", "SCTp 2"))
+```
+
+```{r, Figure 4A, Integrated (in vivo + in vitro) villous differentiation branch UMAP}
+UMAPPlot (Villous, label = TRUE, pt.size = 3) + NoLegend ()
+```
+
+```{r, Figure 4B subset}
+SCTp <- subset (Trophoblasts, idents = c("SCTp 1", "SCTp 2"))
+```
+
+```{r, Figure 4B heatmap}
+Idents (SCTp) <- SCTp@meta.data$Model
+av.exp        <- AverageExpression (SCTp)$RNA
+cor.exp       <- as.data.frame     (cor (av.exp))
+cor.exp$x     <- rownames          (cor.exp)
+cor.df        <- tidyr::gather     (data = cor.exp, y, correlation, c('MPI', 'TBpOrg', 'TBsOrg'))
+cor.df
+
+my_levels <- c("MPI", "TBpOrg", "TBsOrg")
+cor.df$x  <- factor (cor.df$x, levels = my_levels)
+cor.df$y  <- factor (cor.df$y, levels = my_levels)
+
+ggplot               (cor.df, aes (x, y, fill = correlation)) +
+geom_tile            () +
+scale_fill_gradientn (limits = c(0, 1), colours = colorRampPalette (rev (brewer.pal (n = 7, name = "RdYlBu"))) (100))
+```
+
+## SCTp Differential gene expression analysis
+
+```{r, Figure 4E MPI vs TBpOrg differential gene expression analysis}
+DefaultAssay (SCTp) <- "RNA"
+
+Idents (SCTp) <- SCTp@meta.data$Model
+
+TBpOrg.SCTp.response <- FindMarkers (SCTp,
+                                  ident.1         = c("MPI"),
+                                  ident.2         = c("TBpOrg"),
+                                  test.use        = "MAST",
+                                  logfc.threshold = -Inf,
+                                  min.pct         = -Inf,
+                                  min.diff.pct    = -Inf,
+                                  verbose         = FALSE)
+                     head        (TBpOrg.SCTp.response, n = 100)
+```
+
+```{r}
+write.xlsx (TBpOrg.SCTp.response, file = "MPI_TBpOrg_SCTp_DGE.xlsx")
+```
+
+```{r, Figure 4E MPI vs TBpOrg volcano plot}
+EnhancedVolcano (TBpOrg.SCTp.response,
+                 lab             = rownames (TBpOrg.SCTp.response),
+                 x               = "avg_log2FC",
+                 y               = "p_val_adj",
+                 FCcutoff        = 1.00,
+                 pCutoff         = 10e-50,
+                 pointSize       = 4.0,
+                 col             = c('grey', 'grey', 'grey', 'red'),
+                 colAlpha        = 1,
+                 selectLab       = c('FOS', 'SLC22A11', 'BSG', 'GPX3', 'FXYD3', 'ARG2', 'BRI3', 'SLC7A8', 'TIMP2', 'SCD', 'ISG15', 'IFI27'),
+                 xlim            = c(-6, 6),
+                 ylim            = c(0, 325),
+                 gridlines.major = FALSE,
+                 drawConnectors  = TRUE, 
+                 gridlines.minor = FALSE) + NoLegend () + ggtitle (NULL)
+```
+
+```{r, Figure 4E MPI vs TBsOrg differential gene expression analysis}
+DefaultAssay (SCTp) <- "RNA"
+
+Idents (SCTp) <- SCTp@meta.data$Model
+
+TBsOrg.SCTp.response <- FindMarkers (SCTp,
+                                   ident.1         = c("MPI"),
+                                   ident.2         = c("TBsOrg"),
+                                   test.use        = "MAST",
+                                   logfc.threshold = -Inf,
+                                   min.pct         = -Inf,
+                                   min.diff.pct    = -Inf,
+                                   verbose         = FALSE)
+                      head        (TBsOrg.SCTp.response, n = 100)
+```
+
+```{r}
+write.xlsx (TBsOrg.SCTp.response, file = "MPI_TBsOrg_SCTp_DGE.xlsx")
+```
+
+```{r, Figure 4E MPI vs TBsOrg volcano plot}
+EnhancedVolcano (TBsOrg.SCTp.response,
+                 lab             = rownames (TBsOrg.SCTp.response),
+                 x               = "avg_log2FC",
+                 y               = "p_val_adj",
+                 FCcutoff        = 1.00,
+                 pCutoff         = 10e-50,
+                 pointSize       = 4.0,
+                 col             = c('grey', 'grey', 'grey', 'red'),
+                 colAlpha        = 1,
+                 selectLab       = c('PAGE4', 'FOS', 'VGLL1', 'SLC22A11', 'SLC26A2', 'DUSP9', 'GPX3', 'APOE', 'TIMP2', 'FTL', 'ISG15', 'NEAT1', 'IFI27', 'SCD', 'CGB'),
+                 xlim            = c(-6, 6),
+                 ylim            = c(0, 325),
+                 gridlines.major = FALSE,
+                 drawConnectors  = TRUE, 
+                 gridlines.minor = FALSE) + NoLegend () + ggtitle (NULL)
+```
+
+## Model-specific villous differentiation branch regulon transcription factor dot plots
+
+```{r, Figure 4F, dot plot (top)}
+# Comparing Maternal-Placental Interface scVelo-informed gene driver expression across each trophoblast model
+DotPlot (SCTp,
+         features = c("HES1",
+                      "PITX1",
+                      "MXD1",
+                      "ETV4",
+                      "TFAP2A",
+                      "TFAP2C",
+                      "NFKB2",
+                      "ZNF165",
+                      "ZNF143",
+                      "MAFF",
+                      "MAFK",
+                      "MAFG",
+                      "GMEB1",
+                      "CREM",
+                      "CEBPA",
+                      "NR2F6"),
+         assay     = "RNA",
+         cols      = c("lightgrey", "red"),
+         col.min   = 0,
+         col.max   = 1,
+         dot.min   = 0,
+         dot.scale = 15)
+```
+
+## State-specific villous differentiation branch regulon transcription factor dot plots
+
+```{r, Figure 4F, dot plot (bottom)}
+# Plotting transcription factors identified in Table S7 across each SCTp state
+Idents  (SCTp) <- SCTp$Seurat_clusters
+DotPlot (SCTp,
+         features = c("HES1",
+                      "PITX1",
+                      "MXD1",
+                      "ETV4",
+                      "TFAP2A",
+                      "TFAP2C",
+                      "NFKB2",
+                      "ZNF165",
+                      "ZNF143",
+                      "MAFF",
+                      "MAFK",
+                      "MAFG",
+                      "GMEB1",
+                      "CREM",
+                      "CEBPA",
+                      "NR2F6"),
+         assay     = "RNA",
+         cols      = c("lightgrey", "red"),
+         col.min   = 0,
+         col.max   = 1,
+         dot.min   = 0,
+         dot.scale = 15)
+```
+
+# Supplemental Figure 6
+
+### SCTp gene expression comparison
+
+```{r, Supplemental figure 4A renaming cluster idents}
+Trophoblasts <- RenameIdents (Trophoblasts,
+                              'CTB 1'  = "CTB",
+                              'CTB 2'  = "CTB",
+                              'CTB 3'  = "CTB",
+                              'CTB 4'  = "CTB",
+                              'TSC'    = "TSC",
+                              'cCTB 1' = "cCTB",
+                              'cCTB 2' = "cCTB",
+                              'cCTB 3' = "cCTB",
+                              'EVT'    = "EVT",
+                              'SCTp 1' = "SCTp 1",
+                              'SCTp 2' = "SCTp 2")
+
+Trophoblasts$celltype <- Idents (Trophoblasts)
+```
+
+```{r, Supplemental figure 4A}
+Trophoblasts$celltype.model  <- paste  (Idents (Trophoblasts), Trophoblasts$Model, sep = "_")
+Trophoblasts$celltype        <- Idents (Trophoblasts)
+
+Idents (Trophoblasts) <- "celltype.model"
+```
+
+```{r, Supplemental figure 4A dotplot}
+DefaultAssay (Trophoblasts) <- "RNA"
+Idents       (Trophoblasts) <- "celltype.model"
+
+my_levels <- c("CTB_MPI",    "CTB_TBpOrg",    "CTB_TBsOrg",
+               "TSC_MPI",    "TSC_TBpOrg",    "TSC_TBsOrg",
+               "cCTB_MPI",   "cCTB_TBpOrg",   "cCTB_TBsOrg",
+               "EVT_MPI",    "EVT_TBpOrg",    "EVT_TBsOrg",
+               "SCTp 1_MPI", "SCTp 1_TBpOrg", "SCTp 1_TBsOrg",
+               "SCTp 2_MPI", "SCTp 2_TBpOrg", "SCTp 2_TBsOrg")
+
+Trophoblasts@active.ident <- factor (Trophoblasts@active.ident, levels = my_levels)
+
+DotPlot (Trophoblasts,
+         features = c("ERVW-1",
+                      "ERVFRD-1",
+                      "ERVV-1",
+                      "ERVV-2",
+                      "ERV3-1",
+                      "ERVH48-1",
+                      "SLC1A5",
+                      "MFSD2A",
+                      "CGA",
+                      "CGB",
+                      "CGB1",
+                      "CGB2",
+                      "CGB5",
+                      "CGB7",
+                      "CGB8",
+                      "INSL4",
+                      "LEP",
+                      "HSD17B1",
+                      "PSG1",
+                      "PSG2",
+                      "PSG3",
+                      "PSG4",
+                      "PSG5",
+                      "PSG6",
+                      "PSG8",
+                      "PSG9",
+                      "PSG11",
+                      "SDC1",
+                      "KISS1",
+                      "CCK",
+                      "CSHL1",
+                      "GH2",
+                      "ANGPT2",
+                      "INHBA"),
+         assay     = "RNA",
+         cols      = c("lightgrey", "red"),
+         col.min   = 0,
+         col.max   = 1,
+         dot.min   = 0,
+         dot.scale = 15) 
+```
+
+```{r, Supplemental figure 4B heatmap}
+av.exp        <- AverageExpression (SCTp)$RNA
+cor.exp       <- as.data.frame     (cor (av.exp))
+cor.exp$x     <- rownames          (cor.exp)
+cor.df        <- tidyr::gather     (data = cor.exp, y, correlation, c('SCTp 1', 'SCTp 2'))
+cor.df
+
+my_levels <- c("SCTp 1", "SCTp 2")
+cor.df$x  <- factor (cor.df$x, levels = my_levels)
+cor.df$y  <- factor (cor.df$y, levels = my_levels)
+
+ggplot               (cor.df, aes (x, y, fill = correlation)) +
+geom_tile            () +
+scale_fill_gradientn (limits = c(0, 1), colours = colorRampPalette (rev (brewer.pal (n = 7, name = "RdYlBu"))) (100))
+```
+
+```{r, Supplemental figure 4C differential gene expression analysis}
+DefaultAssay (SCTp) <- "RNA"
+
+SCTp.response <- FindMarkers (SCTp,
+                              ident.1         = c("SCTp 1"),
+                              ident.2         = c("SCTp 2"),
+                              test.use        = "MAST",
+                              logfc.threshold = -Inf,
+                              min.pct         = -Inf,
+                              min.diff.pct    = -Inf,
+                              verbose         = FALSE)
+                     head    (SCTp.response, n = 100)
+```
+
+```{r}
+write.xlsx (SCTp.response, file = "SCTp1v2_DGE.xlsx")
+```
+
+```{r, Supplemental figure 4C volcano plot}
+pdf             ("SCTp1v2_DGE.pdf", width = 10, height = 10)
+EnhancedVolcano (SCTp.response,
+                 lab             = rownames (SCTp.response),
+                 x               = "avg_log2FC",
+                 y               = "p_val_adj",
+                 FCcutoff        = 1.00,
+                 pCutoff         = 10e-50,
+                 pointSize       = 4.0,
+                 col             = c('grey', 'grey', 'grey', 'red'),
+                 colAlpha        = 1,
+                 selectLab       = c('SLC40A1', 'PAGE4', 'KRT23', 'PEG10', 'VGLL1', 'ID2', 'MUC15', 'SLC26A2', 'ERVFRD-1', 'PSG6', 'PSG2', 'PSG3', 'PSG5', 'HIST1H1C', 'TFPI2', 'EBI3', 'ISG15', 'FLT1'),
+                 xlim            = c(-6, 6),
+                 ylim            = c(0, 325),
+                 gridlines.major = FALSE,
+                 drawConnectors  = TRUE, 
+                 gridlines.minor = FALSE) + NoLegend () + ggtitle (NULL)
+dev.off         ()
+```

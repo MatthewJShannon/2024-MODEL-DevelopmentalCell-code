@@ -1,0 +1,340 @@
+---
+title:  "MODEL-SPECIFIC DATA PREPARATION"
+author: "Matthew J Shannon"
+date:   "18/01/2024"
+output: html_document
+---
+
+# Load in all dependencies
+
+```{r, include = FALSE}
+devtools::install_github ('chris-mcginnis-ucsf/DoubletFinder')
+devtools::install_github ('satijalab/seurat-wrappers')
+remotes::install_github  ("mojaveazure/seurat-disk")
+devtools::install_github ("velocyto-team/velocyto.R")
+BiocManager::install     ("pcaMethods")
+BiocManager::install     ('MAST')
+BiocManager::install     ('org.Hs.eg.db')
+BiocManager::install     (version = "3.12")
+BiocManager::install     ('Seurat')
+BiocManager::install     ('readxl')
+BiocManager::install     ('modes')
+BiocManager::install     ('pheatmap')
+BiocManager::install     ('limma')
+BiocManager::install     ('clustree')
+BiocManager::install     ('clusterProfiler')
+BiocManager::install     ('EnhancedVolcano')
+install.packages         ('fields')
+install.packages         ('plotly')
+install.packages         ("VennDiagram")
+library                  (Seurat)
+library                  (readr)
+library                  (tidyverse)
+library                  (Matrix)
+library                  (dplyr)
+library                  (ggplot2)
+library                  (cowplot)
+library                  (tibble)
+library                  (readxl)
+library                  (sctransform)
+library                  (fields)
+library                  (KernSmooth)
+library                  (ROCR)
+library                  (parallel)
+library                  (reshape2)
+library                  (pheatmap)
+library                  (DoubletFinder)
+library                  (limma)
+library                  (SeuratWrappers)
+library                  (SeuratDisk)
+library                  (plotly)
+library                  (clustree)
+library                  (velocyto.R)
+library                  (MAST)
+library                  (EnhancedVolcano)
+library                  (clusterProfiler)
+library                  (AnnotationDbi)
+library                  (org.Hs.eg.db)
+library                  (VennDiagram)
+library                  (RColorBrewer)
+```
+
+# Load the integrated trophoblast Seurat object
+
+```{r}
+load         (file = "~/Desktop/FINAL_Trophoblast_Data.Rdata")
+DefaultAssay (Trophoblasts) <- "integrated"
+```
+
+```{r}
+Trophoblasts$seurat_clusters <- Idents (Trophoblasts)
+UMAPPlot (Trophoblasts, pt.size = 3, label = TRUE, split.by = 'Model') + NoLegend ()
+```
+
+# Subset the dataset into model-specific trophoblast groups
+
+```{r}
+# Maternal-placental interface (in vivo) trophoblasts
+MPI <- subset (Trophoblasts, subset = Model == "MPI")
+MPI
+
+# PD-TOrg (in vitro) trophoblasts
+TBpOrg <- subset (Trophoblasts, subset = Model == "TBpOrg")
+TBpOrg
+
+# hTSC-TOrg (in vitro) trophoblasts
+TBsOrg <- subset (Trophoblasts, subset = Model == "TBsOrg")
+TBsOrg
+```
+
+# Quantify the number of cells within each trophoblast state in each model
+
+```{r, Table S5}
+# Table S5B
+table (Idents (MPI))
+
+# Table S5C
+table (Idents (TBpOrg))
+
+# Table S5D
+table (Idents (TBsOrg))
+```
+
+```{r}
+rm (Trophoblasts)
+```
+
+# Prepare the maternal-placental interface (in vivo) trophoblast object
+
+```{r}
+DefaultAssay (MPI) <- "integrated"
+
+#redo find neighbours/clusters
+MPI <- FindNeighbors (MPI)
+MPI <- FindClusters  (MPI, resolution = 0.375)
+# Reduce trophoblast data dimensionality
+MPI <- RunUMAP       (MPI, reduction  = "pca", dims = 1:30)
+MPI <- RunTSNE       (MPI, reduction  = "pca", dims = 1:30)
+MPI
+```
+
+```{r}
+# Visualize the trophoblast data by TSNE
+TSNEPlot    (MPI, label = TRUE, pt.size = 3) + NoLegend ()
+# Visualize the trophoblast data by UMAP
+UMAPPlot    (MPI, label = TRUE, pt.size = 3) + NoLegend ()
+# Visualize expression of trophoblast QC metrics by UMAP
+FeaturePlot (MPI, features = c("nFeature_RNA"), min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+FeaturePlot (MPI, features = c("nCount_RNA"),   min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+FeaturePlot (MPI, features = c("percent.mt"),   min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+```
+
+```{r}
+# Bin states into trophoblast subtypes
+MPI <- RenameIdents (MPI,
+                     '0' = "CTB",
+                     '1' = "CTB",
+                     '2' = "CTB",
+                     '3' = "cCTB",
+                     '4' = "EVT",
+                     '5' = "CTB",
+                     '6' = "SCTp",
+                     '7' = "cCTB")
+
+MPI$celltype <- Idents (MPI)
+MPI[[]]
+
+UMAPPlot (MPI, label = TRUE) + NoLegend ()
+```
+
+# Identify enriched maternal-placental interface (in vivo) trophoblast-state gene markers
+
+```{r}
+DefaultAssay (MPI) <- "RNA"
+
+MPI.markers <- FindAllMarkers (object   = MPI,
+                               only.pos = TRUE,
+                               min.pct  = 0.25, 
+                               test.use = "MAST")
+
+DefaultAssay (MPI) <- "integrated"
+```
+
+```{r}
+MPI.markers %>% group_by (cluster) %>% top_n (20, avg_log2FC)
+```
+
+```{r, Table S3B}
+write.xlsx (MPI.markers, file = "MPI_genemarkers.xlsx")
+```
+
+# Save the maternal-placental interface (in vivo) trophoblast object
+
+```{r}
+save (MPI, file = "MPI_Trophoblasts.Rdata")
+```
+
+# Demultiplex the TBpOrg (in vitro) trophoblast object
+
+```{r}
+Undifferentiated         <- read_tsv ("~/Desktop/BRC/PT_100/clusters.tsv")
+Undifferentiated$barcode <- paste    ("47", Undifferentiated$barcode, sep = "_")
+Differentiated           <- read_tsv ("~/Desktop/BRC/PT_100_EVT/clusters.tsv")
+Differentiated$barcode   <- paste    ("48", Differentiated$barcode, sep = "_")
+```
+
+```{r}
+TBpOrg@meta.data <- rownames_to_column (TBpOrg@meta.data , "barcode")
+Demultiplex      <- rbind              (Undifferentiated, Differentiated)
+```
+
+```{r}
+TBpOrg@meta.data <- merge              (TBpOrg[[]], Demultiplex, all = FALSE)
+TBpOrg@meta.data <- column_to_rownames (TBpOrg@meta.data, "barcode")
+```
+
+```{r}
+Idents (TBpOrg) <- "assignment"
+
+TBpOrg <- subset (TBpOrg, idents = c("0", "1", "2"))
+TBpOrg
+
+Idents (TBpOrg) <- "celltype"
+```
+
+# Prepare the TBpOrg (in vitro) trophoblast object
+
+```{r}
+DefaultAssay (TBpOrg) <- "integrated"
+
+#redo find neighbours/clusters
+TBpOrg <- FindNeighbors (TBpOrg)
+TBpOrg <- FindClusters  (TBpOrg, resolution = 0.15)
+# Reduce trophoblast data dimensionality
+TBpOrg <- RunUMAP       (TBpOrg, reduction  = "pca", dims = 1:30)
+TBpOrg <- RunTSNE       (TBpOrg, reduction  = "pca", dims = 1:30)
+TBpOrg
+```
+
+```{r}
+# Visualize the trophoblast data by TSNE
+TSNEPlot    (TBpOrg, label = TRUE, pt.size = 3) + NoLegend ()
+# Visualize the trophoblast data by UMAP
+UMAPPlot    (TBpOrg, label = TRUE, pt.size = 3) + NoLegend ()
+# Visualize expression of trophoblast QC metrics by UMAP
+FeaturePlot (TBpOrg, features = c("nFeature_RNA"), min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+FeaturePlot (TBpOrg, features = c("nCount_RNA"),   min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+FeaturePlot (TBpOrg, features = c("percent.mt"),   min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+```
+
+```{r}
+# Bin states into trophoblast subtypes
+TBpOrg <- RenameIdents (TBpOrg,
+                        '0' = "CTB",
+                        '1' = "cCTB",
+                        '2' = "CTB",
+                        '3' = "EVT",
+                        '4' = "SCTp",
+                        '5' = "TSC")
+
+TBpOrg$celltype <- Idents (TBpOrg)
+TBpOrg[[]]
+
+UMAPPlot (TBpOrg, label = TRUE) + NoLegend ()
+```
+
+# Identify enriched PD-TOrg (in vitro) trophoblast-state gene markers
+
+```{r}
+DefaultAssay (TBpOrg) <- "RNA"
+
+TBpOrg.markers <- FindAllMarkers (object   = TBpOrg,
+                                   only.pos = TRUE,
+                                   min.pct  = 0.25, 
+                                   test.use = "MAST")
+
+DefaultAssay (TBpOrg) <- "integrated"
+```
+
+```{r}
+TBpOrg.markers %>% group_by (cluster) %>% top_n (20, avg_log2FC)
+```
+
+```{r, Table S3C}
+write.xlsx (TBpOrg.markers, file = "TBpOrg_genemarkers.xlsx")
+```
+
+# Save the PD-TOrg (in vitro) trophoblast object
+
+```{r}
+save (TBpOrg, file = "TBpOrg.Rdata")
+```
+
+# Prepare the TBsOrg (in vitro) trophoblast object
+
+```{r}
+DefaultAssay (TBsOrg) <- "integrated"
+
+#redo find neighbours/clusters
+TBsOrg  <- FindNeighbors (TBsOrg)
+TBsOrg  <- FindClusters  (TBsOrg, resolution = 0.25)
+# Reduce trophoblast data dimensionality
+TBsOrg  <- RunUMAP       (TBsOrg, reduction  = "pca", dims = 1:30)
+TBsOrg  <- RunTSNE       (TBsOrg, reduction  = "pca", dims = 1:30)
+TBsOrg
+```
+
+```{r}
+# Visualize the trophoblast data by TSNE
+TSNEPlot    (TBsOrg, label = TRUE, pt.size = 3) + NoLegend ()
+# Visualize the trophoblast data by UMAP
+UMAPPlot    (TBsOrg, label = TRUE, pt.size = 3) + NoLegend ()
+# Visualize expression of trophoblast QC metrics by UMAP
+FeaturePlot (TBsOrg, features = c("nFeature_RNA"), min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+FeaturePlot (TBsOrg, features = c("nCount_RNA"),   min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+FeaturePlot (TBsOrg, features = c("percent.mt"),   min.cutoff = 0, order = TRUE, pt.size = 3, cols = c("grey", "red"))
+```
+
+```{r}
+# Bin states into trophoblast subtypes
+TBsOrg <- RenameIdents (TBsOrg,
+                        '0' = "TSC",
+                        '1' = "cCTB",
+                        '2' = "SCTp",
+                        '3' = "CTB",
+                        '4' = "SCTp",
+                        '5' = "TSC",
+                        '6' = "EVT" )
+
+TBsOrg$celltype <- Idents (TBsOrg)
+TBsOrg[[]]
+
+UMAPPlot (TBsOrg, label = TRUE) + NoLegend ()
+```
+
+# Identify enriched hTSC-TOrg (in vitro) trophoblast-state gene markers
+
+```{r}
+DefaultAssay (TBsOrg) <- "RNA"
+
+TBsOrg.markers <- FindAllMarkers (object   = TBsOrg,
+                                     only.pos = TRUE,
+                                     min.pct  = 0.25, 
+                                     test.use = "MAST")
+
+DefaultAssay (TBsOrg) <- "integrated"
+```
+
+```{r}
+TBsOrg.markers %>% group_by (cluster) %>% top_n (20, avg_log2FC)
+```
+
+```{r, Table S3D}
+write.xlsx (TBsOrg.markers, file = "TBsOrg_genemarkers.xlsx")
+```
+
+# Save the hTSC-TOrg (in vitro) trophoblast object
+
+```{r}
+save (TBsOrg, file = "TBsOrg.Rdata")
+```
