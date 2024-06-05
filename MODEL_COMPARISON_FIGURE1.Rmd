@@ -222,7 +222,7 @@ Trophoblasts                 <- RenameIdents (Trophoblasts, new.cluster.ids)
 ```
 
 ```{r, Figure 1F}
-ggplot             (Trophoblasts2@meta.data, aes (x = c(Trophoblasts2$Model), fill = Trophoblasts2$celltype)) +
+ggplot             (Trophoblasts@meta.data, aes (x = c(Trophoblasts$Model), fill = Trophoblasts$celltype)) +
 theme_classic2     () +
 geom_bar           (position     = "fill") +
 scale_y_continuous (labels       = scales::percent) +
