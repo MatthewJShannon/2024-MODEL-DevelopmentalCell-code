@@ -250,7 +250,7 @@ PCCData_noTSC.monocle <- detectGenes         (PCCData_noTSC.monocle, min_expr = 
 PCCData_noTSC.monocle_expressed_genes <- row.names (subset (fData (PCCData_noTSC.monocle), num_cells_expressed >= 10))
 ```
 
-```{r, Figure 3A MPI (in vivo) analysis}
+```{r, Figure 6A}
 ERVFRD_id <- row.names (subset (fData (PCCData_noTSC.monocle), gene_short_name == "ERVFRD-1"))
 HLAG_id   <- row.names (subset (fData (PCCData_noTSC.monocle), gene_short_name == "HLA-G"   ))
 NANOG_id  <- row.names (subset (fData (PCCData_noTSC.monocle), gene_short_name == "NANOG"   ))
@@ -272,7 +272,7 @@ PCCData_noTSC.monocle.2 <- addCellType          (PCCData_noTSC.monocle.2,
 PCCData_noTSC.monocle   <- classifyCells        (PCCData_noTSC.monocle, PCCData_noTSC.monocle.2)
 ```
 
-```{r, Figure 3A MPI (in vivo) analysis}
+```{r, Figure 6A}
 marker_diff              <- markerDiffTable   (PCCData_noTSC.monocle[PCCData_noTSC.monocle_expressed_genes, ], PCCData_noTSC.monocle.2, cores = 4)
 semisup_clustering_genes <- row.names         (marker_diff)[order (marker_diff$qval)][1:500]
 PCCData_noTSC.monocle    <- setOrderingFilter (PCCData_noTSC.monocle, semisup_clustering_genes)
@@ -306,7 +306,7 @@ PCCData.monocle <- detectGenes         (PCCData.monocle, min_expr = 0.1)
 PCCData.monocle_expressed_genes <- row.names (subset (fData (PCCData.monocle), num_cells_expressed >= 10))
 ```
 
-```{r, Figure 3A MPI (in vivo) analysis}
+```{r, Figure 6A}
 ERVFRD_id <- row.names (subset (fData (PCCData.monocle), gene_short_name == "ERVFRD-1"))
 HLAG_id   <- row.names (subset (fData (PCCData.monocle), gene_short_name == "HLA-G"   ))
 NANOG_id  <- row.names (subset (fData (PCCData.monocle), gene_short_name == "NANOG"   ))
@@ -328,7 +328,7 @@ PCCData.monocle.2 <- addCellType          (PCCData.monocle.2,
 PCCData.monocle   <- classifyCells        (PCCData.monocle, PCCData.monocle.2)
 ```
 
-```{r, Figure 3A MPI (in vivo) analysis}
+```{r, Figure 6A}
 marker_diff              <- markerDiffTable   (PCCData.monocle[PCCData.monocle_expressed_genes, ], PCCData.monocle.2, cores = 4)
 semisup_clustering_genes <- row.names         (marker_diff)[order (marker_diff$qval)][1:500]
 PCCData.monocle          <- setOrderingFilter (PCCData.monocle, semisup_clustering_genes)
