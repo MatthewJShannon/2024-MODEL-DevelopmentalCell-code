@@ -15,7 +15,7 @@ devtools::install_github   ("velocyto-team/velocyto.R")
 BiocManager::install       ("pcaMethods")
 BiocManager::install       ('MAST')
 BiocManager::install       ('org.Hs.eg.db')
-BiocManager::install       (version = "3.12")ikAOQ
+BiocManager::install       (version = "3.12")
 BiocManager::install       ('Seurat')
 BiocManager::install       ('readxl')
 BiocManager::install       ('modes')
